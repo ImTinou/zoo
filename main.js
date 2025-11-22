@@ -1,306 +1,256 @@
-// Main Game Loop
+// Main Game Loop - 3D Version
 class Game {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.grid = new Grid(40, 40, 64);
-        this.camera = new Camera(this.canvas);
-        this.renderer = new Renderer(this.canvas, this.grid, this.camera);
+        this.container = document.getElementById('gameContainer');
+        this.grid = new Grid(40, 40, 2);
+        this.camera3d = new Camera3D(this.container);
+        this.renderer3d = new Renderer3D(this.container, this.grid, this.camera3d);
+        this.fenceBuilder = new FenceBuilder(this.renderer3d, this.grid);
         this.zoo = new Zoo();
         this.ui = new UIManager(this.zoo);
 
-        this.mouseGridX = -1;
-        this.mouseGridY = -1;
-        this.selectedObject = null;
+        this.currentMousePos = null;
+        this.isDragging = false;
+        this.isPanning = false;
+        this.selectedAnimalMesh = null;
+        this.animalMeshes = [];
+        this.enrichmentMeshes = [];
 
-        this.init();
         this.setupControls();
         this.gameLoop();
     }
 
-    init() {
-        // Centrer la caméra sur la grille
-        const center = this.grid.gridToIso(this.grid.width / 2, this.grid.height / 2);
-        this.camera.x = center.x;
-        this.camera.y = center.y - 200;
-
-        // Créer un enclos de départ
-        this.createStarterExhibit();
-    }
-
-    createStarterExhibit() {
-        // Créer un petit enclos 3x3 pour commencer
-        const startX = 18;
-        const startY = 18;
-
-        // Créer l'exhibit
-        const exhibit = new Exhibit(startX, startY, 4, 4);
-        exhibit.hasShelter = true;
-        exhibit.hasWater = true;
-        this.zoo.exhibits.push(exhibit);
-
-        // Marquer les tuiles comme occupées
-        for (let y = startY; y < startY + 4; y++) {
-            for (let x = startX; x < startX + 4; x++) {
-                const tile = this.grid.getTile(x, y);
-                if (tile) {
-                    tile.terrain = 'grass';
-                    tile.occupied = true;
-                }
-            }
-        }
-
-        // Ajouter une clôture visuelle (bâtiment fictif pour représenter)
-        for (let y = startY; y < startY + 4; y++) {
-            for (let x = startX; x < startX + 4; x++) {
-                // Seulement sur les bords
-                if (x === startX || x === startX + 3 || y === startY || y === startY + 3) {
-                    const tile = this.grid.getTile(x, y);
-                    if (tile && !tile.building) {
-                        // Marqueur de clôture simple
-                        tile.scenery.push({ emoji: '🪵', type: 'fence' });
-                    }
-                }
-            }
-        }
-
-        // Ajouter un lion de départ
-        const lion = new Animal('lion', startX + 1.5, startY + 1.5);
-        exhibit.addAnimal(lion);
-        this.zoo.addAnimal(lion);
-
-        // Ajouter quelques chemins
-        for (let i = 15; i < 25; i++) {
-            this.grid.placePath(i, 15, 'asphalt');
-            this.grid.placePath(15, i, 'asphalt');
-        }
-    }
-
     setupControls() {
-        // Camera controls
+        const canvas = this.renderer3d.getRenderer().domElement;
+
+        // Camera rotation buttons
         document.getElementById('rotateLeftBtn').addEventListener('click', () => {
-            this.camera.rotate(-1);
+            this.camera3d.rotate(-1);
         });
 
         document.getElementById('rotateRightBtn').addEventListener('click', () => {
-            this.camera.rotate(1);
+            this.camera3d.rotate(1);
         });
 
         document.getElementById('zoomInBtn').addEventListener('click', () => {
-            this.camera.setZoom(this.camera.zoom * 1.2);
+            this.camera3d.setZoom(this.camera3d.zoom * 1.2);
         });
 
         document.getElementById('zoomOutBtn').addEventListener('click', () => {
-            this.camera.setZoom(this.camera.zoom / 1.2);
+            this.camera3d.setZoom(this.camera3d.zoom / 1.2);
         });
 
         // Grid toggle
         document.getElementById('gridToggleBtn').addEventListener('click', () => {
-            this.renderer.showGrid = !this.renderer.showGrid;
-        });
-
-        // Terrain toggle
-        document.getElementById('terrainToggleBtn').addEventListener('click', () => {
-            this.renderer.showTerrain = !this.renderer.showTerrain;
+            this.renderer3d.toggleGrid();
         });
 
         // Mouse controls
-        this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        this.canvas.addEventListener('click', (e) => this.onClick(e));
+        canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+
+        // Pan avec middle click ou espace + drag
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    onMouseDown(e) {
+        const rect = e.target.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const intersection = this.renderer3d.getMouseIntersection(mouseX, mouseY);
+
+        if (!intersection) return;
+
+        // Pan avec clic droit
+        if (e.button === 2) {
+            this.isPanning = true;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+            return;
+        }
+
+        if (e.button !== 0) return; // Seulement clic gauche pour build
+
+        const gridX = intersection.x;
+        const gridY = intersection.y;
+
+        // Mode clôture - démarrer le drag
+        if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'fence') {
+            this.fenceBuilder.setFenceType(this.ui.selectedBuildMode.fence);
+            this.fenceBuilder.startDrawing(gridX, gridY);
+            this.isDragging = true;
+        } else if (this.ui.bulldozeMode) {
+            this.handleBulldoze(gridX, gridY);
+        } else if (this.ui.selectedBuildMode) {
+            this.handleBuild(gridX, gridY);
+        }
     }
 
     onMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const screenX = e.clientX - rect.left;
-        const screenY = e.clientY - rect.top;
+        const rect = e.target.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-        const world = this.camera.screenToWorld(screenX, screenY);
-        const gridPos = this.grid.screenToGrid(world.x, world.y, this.camera);
+        // Pan
+        if (this.isPanning) {
+            const deltaX = e.clientX - this.lastMouseX;
+            const deltaY = e.clientY - this.lastMouseY;
+            this.camera3d.pan(deltaX, deltaY);
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+            return;
+        }
 
-        this.mouseGridX = gridPos.x;
-        this.mouseGridY = gridPos.y;
-    }
+        const intersection = this.renderer3d.getMouseIntersection(mouseX, mouseY);
 
-    onClick(e) {
-        if (!this.grid.isValid(this.mouseGridX, this.mouseGridY)) return;
+        if (!intersection) return;
 
-        const tile = this.grid.getTile(this.mouseGridX, this.mouseGridY);
+        this.currentMousePos = intersection;
 
-        // Mode bulldoze
+        // Highlight tile
+        let color = 0x3498db;
         if (this.ui.bulldozeMode) {
-            if (tile.building) {
-                this.zoo.removeBuilding(tile.building);
-                this.grid.remove(this.mouseGridX, this.mouseGridY);
-                this.zoo.earn(50); // Remboursement partiel
-            } else if (tile.path) {
-                this.grid.remove(this.mouseGridX, this.mouseGridY);
-                this.zoo.earn(5);
-            }
-            this.ui.updateStats();
-            return;
+            color = 0xe74c3c;
+        } else if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'fence') {
+            color = 0x27ae60;
         }
+        this.renderer3d.highlightTile(intersection.x, intersection.y, color);
 
-        // Mode construction
-        if (this.ui.selectedBuildMode) {
-            this.handleBuildMode(tile);
-            return;
+        // Update fence preview pendant le drag
+        if (this.isDragging && this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'fence') {
+            this.fenceBuilder.updateDrawing(intersection.x, intersection.y);
         }
-
-        // Sélection d'objet
-        this.handleSelection(tile);
     }
 
-    handleBuildMode(tile) {
+    onMouseUp(e) {
+        if (this.isPanning) {
+            this.isPanning = false;
+            return;
+        }
+
+        if (this.isDragging && this.currentMousePos) {
+            const result = this.fenceBuilder.finishDrawing(
+                this.currentMousePos.x,
+                this.currentMousePos.y,
+                this.zoo
+            );
+
+            if (result && result.success) {
+                this.ui.updateStats();
+                console.log(`Exhibit built! Cost: $${result.cost}`);
+            } else if (result) {
+                console.log(result.message);
+            }
+
+            this.isDragging = false;
+        }
+    }
+
+    handleBuild(gridX, gridY) {
         const mode = this.ui.selectedBuildMode;
 
         if (mode.type === 'path') {
             const cost = PathCosts[mode.material] || 10;
-            if (this.zoo.canAfford(cost)) {
-                if (this.grid.placePath(this.mouseGridX, this.mouseGridY, mode.material)) {
-                    this.zoo.spend(cost);
-                }
-            } else {
-                this.showMessage('Not enough money!');
+            if (this.zoo.spend(cost)) {
+                this.grid.placePath(gridX, gridY, mode.material);
+                this.renderer3d.addPath(gridX, gridY, mode.material);
+                this.ui.updateStats();
             }
         } else if (mode.type === 'facility') {
-            const buildingType = mode.building;
-            const spec = BuildingTypes[buildingType];
+            const spec = BuildingTypes[mode.building];
+            if (this.zoo.spend(spec.cost)) {
+                const building = new Building(mode.building, gridX, gridY);
+                this.grid.placeBuilding(gridX, gridY, building);
+                this.renderer3d.addBuilding(building);
+                this.zoo.addBuilding(building);
+                this.ui.updateStats();
+            }
+        } else if (mode.type === 'enrichment') {
+            const spec = EnrichmentTypes[mode.item];
+            if (this.zoo.spend(spec.cost)) {
+                const enrichment = new Enrichment(mode.item, gridX, gridY);
+                const mesh = spec.create3DMesh(gridX, gridY, this.grid.width, this.grid.height);
+                mesh.userData.enrichment = enrichment;
+                this.renderer3d.getScene().add(mesh);
+                this.enrichmentMeshes.push(mesh);
 
-            if (this.zoo.canAfford(spec.cost)) {
-                if (tile.occupied || tile.building) {
-                    this.showMessage('Tile is occupied!');
-                    return;
+                const tile = this.grid.getTile(gridX, gridY);
+                if (tile) {
+                    tile.scenery.push(enrichment);
                 }
 
-                const building = new Building(buildingType, this.mouseGridX, this.mouseGridY);
-                this.grid.placeBuilding(this.mouseGridX, this.mouseGridY, building);
-                this.zoo.addBuilding(building);
-                this.zoo.spend(spec.cost);
-            } else {
-                this.showMessage('Not enough money!');
-            }
-        } else if (mode.type === 'scenery') {
-            const itemType = mode.item;
-            const spec = SceneryTypes[itemType];
-
-            if (this.zoo.canAfford(spec.cost)) {
-                const item = new SceneryItem(itemType, this.mouseGridX, this.mouseGridY);
-                tile.scenery.push(item);
-                this.zoo.spend(spec.cost);
-            } else {
-                this.showMessage('Not enough money!');
+                this.ui.updateStats();
             }
         } else if (mode.type === 'animal') {
-            const species = mode.animal;
-            const spec = AnimalSpecies[species];
-
-            if (this.zoo.canAfford(spec.cost)) {
-                // Trouver un enclos à cette position
-                let targetExhibit = null;
-                for (let exhibit of this.zoo.exhibits) {
-                    const bounds = exhibit.getBounds();
-                    if (this.mouseGridX >= bounds.x && this.mouseGridX < bounds.x + bounds.width &&
-                        this.mouseGridY >= bounds.y && this.mouseGridY < bounds.y + bounds.height) {
-                        targetExhibit = exhibit;
-                        break;
-                    }
-                }
-
-                if (targetExhibit) {
-                    const animal = new Animal(species, this.mouseGridX + 0.5, this.mouseGridY + 0.5);
-                    targetExhibit.addAnimal(animal);
+            const spec = AnimalSpecies[mode.animal];
+            if (this.zoo.spend(spec.cost)) {
+                // Trouver l'exhibit à cette position
+                const tile = this.grid.getTile(gridX, gridY);
+                if (tile && tile.exhibit) {
+                    const animal = new Animal(mode.animal, gridX + 0.5, gridY + 0.5);
+                    tile.exhibit.addAnimal(animal);
                     this.zoo.addAnimal(animal);
-                    this.zoo.spend(spec.cost);
+
+                    // Créer le mesh 3D
+                    const animalMesh = this.renderer3d.createAnimalMesh(animal);
+                    this.renderer3d.getScene().add(animalMesh);
+                    this.animalMeshes.push({ animal, mesh: animalMesh });
+
+                    this.ui.updateStats();
                 } else {
-                    this.showMessage('Place animals in exhibits!');
+                    console.log('Place animals inside exhibits!');
+                    this.zoo.earn(spec.cost); // Refund
                 }
-            } else {
-                this.showMessage('Not enough money!');
             }
         }
-
-        this.ui.updateStats();
     }
 
-    handleSelection(tile) {
-        // Vérifier s'il y a un animal
-        const clickedAnimal = this.zoo.animals.find(a =>
-            Math.floor(a.x) === this.mouseGridX && Math.floor(a.y) === this.mouseGridY
-        );
+    handleBulldoze(gridX, gridY) {
+        const tile = this.grid.getTile(gridX, gridY);
+        if (!tile) return;
 
-        if (clickedAnimal) {
-            this.selectedObject = { type: 'animal', animal: clickedAnimal };
-            this.ui.showSelectionInfo(this.selectedObject);
-            return;
-        }
-
-        // Vérifier s'il y a un bâtiment
         if (tile.building) {
-            this.selectedObject = { type: 'building', building: tile.building };
-            this.ui.showSelectionInfo(this.selectedObject);
-            return;
+            this.zoo.removeBuilding(tile.building);
+            this.renderer3d.removeObject(gridX, gridY);
+            this.grid.remove(gridX, gridY);
+            this.zoo.earn(50);
+            this.ui.updateStats();
+        } else if (tile.path) {
+            this.renderer3d.removeObject(gridX, gridY);
+            this.grid.remove(gridX, gridY);
+            this.zoo.earn(5);
+            this.ui.updateStats();
         }
-
-        // Sinon afficher les infos de la tuile
-        this.selectedObject = { type: 'tile', tile: tile, x: this.mouseGridX, y: this.mouseGridY };
-        this.ui.showSelectionInfo(this.selectedObject);
-    }
-
-    showMessage(text) {
-        // Simple alert pour l'instant
-        console.log(text);
     }
 
     update() {
-        this.camera.update();
+        this.camera3d.update();
         this.zoo.update();
         this.ui.updateStats();
+
+        // Update animal meshes positions
+        this.animalMeshes.forEach(({ animal, mesh }) => {
+            mesh.position.set(
+                animal.x * 2 - this.grid.width,
+                0,
+                animal.y * 2 - this.grid.height
+            );
+
+            // Rotation vers la direction de déplacement
+            if (animal.targetX && animal.targetY) {
+                const dx = animal.targetX - animal.x;
+                const dy = animal.targetY - animal.y;
+                if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+                    mesh.rotation.y = Math.atan2(dx, dy);
+                }
+            }
+        });
     }
 
     render() {
-        this.renderer.render();
-
-        // Highlight de la tuile survolée
-        if (this.grid.isValid(this.mouseGridX, this.mouseGridY)) {
-            let color = 'rgba(52, 152, 219, 0.3)';
-            if (this.ui.bulldozeMode) {
-                color = 'rgba(231, 76, 60, 0.5)';
-            } else if (this.ui.selectedBuildMode) {
-                color = 'rgba(46, 204, 113, 0.4)';
-            }
-            this.renderer.highlightTile(this.mouseGridX, this.mouseGridY, color);
-        }
-
-        // Dessiner les animaux
-        this.camera.apply(this.renderer.ctx);
-        this.zoo.animals.forEach(animal => {
-            const iso = this.grid.gridToIso(animal.x, animal.y);
-            this.renderer.ctx.font = '32px Arial';
-            this.renderer.ctx.textAlign = 'center';
-            this.renderer.ctx.textBaseline = 'bottom';
-
-            // Ombre
-            this.renderer.ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            this.renderer.ctx.fillText(animal.emoji, iso.x + 2, iso.y + 2);
-
-            // Animal
-            this.renderer.ctx.fillText(animal.emoji, iso.x, iso.y);
-
-            // Nom et barre de vie si sélectionné
-            if (this.selectedObject && this.selectedObject.animal === animal) {
-                this.renderer.ctx.fillStyle = 'white';
-                this.renderer.ctx.font = 'bold 12px Arial';
-                this.renderer.ctx.fillText(animal.name, iso.x, iso.y - 25);
-
-                // Barre de bonheur
-                const barWidth = 40;
-                const barHeight = 4;
-                this.renderer.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                this.renderer.ctx.fillRect(iso.x - barWidth/2, iso.y - 20, barWidth, barHeight);
-                this.renderer.ctx.fillStyle = this.ui.getBarColor(animal.happiness);
-                this.renderer.ctx.fillRect(iso.x - barWidth/2, iso.y - 20, barWidth * (animal.happiness/100), barHeight);
-            }
-        });
-        this.camera.restore(this.renderer.ctx);
+        this.renderer3d.render();
     }
 
     gameLoop() {
@@ -310,7 +260,8 @@ class Game {
     }
 }
 
-// Démarrer le jeu
+// Start game
 window.addEventListener('load', () => {
     const game = new Game();
+    console.log('Zoo Tycoon 3D loaded! Drag to build fences for exhibits!');
 });

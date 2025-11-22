@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m \"$(cat <<''EOF''\nComplete rewrite - Professional Zoo Tycoon Web Edition\n\n🎮 Core Features:\n- Isometric camera with smooth rotation (90° increments)\n- Intelligent grid-based building system\n- Path system with auto-connecting tiles\n- Real exhibit management with animal needs\n- Budget and visitor management\n- Professional UI with organized tabs\n\n🏗️ Technical Architecture:\n- Modular engine (Grid, Camera, Renderer)\n- Separated game logic (Zoo, Animals, Buildings)\n- Clean UI management system\n- Proper isometric projection\n\n🦁 Gameplay Systems:\n- Animal happiness based on habitat quality\n- Visitor count influenced by zoo rating\n- Monthly financial reports\n- Multiple game speeds and pause\n- Build mode with visual feedback\n\n🎨 UI/UX:\n- Zoo Tycoon inspired interface\n- Tabbed build menu (Exhibits, Paths, Facilities, Scenery)\n- Real-time stats display\n- Selection info panel\n- Camera and view controls\n\nBased on extensive research of Zoo Tycoon mechanics and controls:\nhttps://strategywiki.org/wiki/Zoo_Tycoon/Controls\nhttps://grokipedia.com/page/Zoo_Tycoon_2\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

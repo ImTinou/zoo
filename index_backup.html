@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoo Tycoon 3D Web</title>
+    <title>Zoo Tycoon Web</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -62,77 +62,30 @@
         <div class="tab-content">
             <!-- Exhibits Tab -->
             <div class="tab-panel active" id="exhibits-panel">
-                <h3>Fence Types (Drag to Build)</h3>
+                <h3>Build Exhibit</h3>
                 <div class="item-list">
-                    <div class="build-item" data-type="fence" data-fence="wood">
-                        <div class="item-preview">🪵</div>
+                    <div class="build-item" data-type="exhibit" data-size="small">
+                        <div class="item-preview">📦</div>
                         <div class="item-info">
-                            <div class="item-name">Wooden Fence</div>
-                            <div class="item-cost">$50/tile</div>
+                            <div class="item-name">Small Exhibit</div>
+                            <div class="item-cost">$500</div>
                         </div>
                     </div>
-                    <div class="build-item" data-type="fence" data-fence="metal">
-                        <div class="item-preview">⛓️</div>
+                    <div class="build-item" data-type="exhibit" data-size="medium">
+                        <div class="item-preview">📦📦</div>
                         <div class="item-info">
-                            <div class="item-name">Metal Fence</div>
-                            <div class="item-cost">$100/tile</div>
+                            <div class="item-name">Medium Exhibit</div>
+                            <div class="item-cost">$1,200</div>
                         </div>
                     </div>
-                    <div class="build-item" data-type="fence" data-fence="glass">
-                        <div class="item-preview">🪟</div>
+                    <div class="build-item" data-type="exhibit" data-size="large">
+                        <div class="item-preview">📦📦📦</div>
                         <div class="item-info">
-                            <div class="item-name">Glass Fence</div>
-                            <div class="item-cost">$150/tile</div>
-                        </div>
-                    </div>
-                    <div class="build-item" data-type="fence" data-fence="moat">
-                        <div class="item-preview">🌊</div>
-                        <div class="item-info">
-                            <div class="item-name">Moat</div>
-                            <div class="item-cost">$200/tile</div>
+                            <div class="item-name">Large Exhibit</div>
+                            <div class="item-cost">$2,500</div>
                         </div>
                     </div>
                 </div>
-
-                <h3>Enrichments</h3>
-                <div class="item-list">
-                    <div class="build-item" data-type="enrichment" data-item="waterPond">
-                        <div class="item-preview">💧</div>
-                        <div class="item-info">
-                            <div class="item-name">Water Pond</div>
-                            <div class="item-cost">$200</div>
-                        </div>
-                    </div>
-                    <div class="build-item" data-type="enrichment" data-item="tree">
-                        <div class="item-preview">🌳</div>
-                        <div class="item-info">
-                            <div class="item-name">Tree</div>
-                            <div class="item-cost">$100</div>
-                        </div>
-                    </div>
-                    <div class="build-item" data-type="enrichment" data-item="rock">
-                        <div class="item-preview">🪨</div>
-                        <div class="item-info">
-                            <div class="item-name">Rock</div>
-                            <div class="item-cost">$75</div>
-                        </div>
-                    </div>
-                    <div class="build-item" data-type="enrichment" data-item="shelter">
-                        <div class="item-preview">🏠</div>
-                        <div class="item-info">
-                            <div class="item-name">Shelter</div>
-                            <div class="item-cost">$300</div>
-                        </div>
-                    </div>
-                    <div class="build-item" data-type="enrichment" data-item="feeder">
-                        <div class="item-preview">🍖</div>
-                        <div class="item-info">
-                            <div class="item-name">Feeder</div>
-                            <div class="item-cost">$150</div>
-                        </div>
-                    </div>
-                </div>
-
                 <h3>Animals</h3>
                 <div class="item-list">
                     <div class="build-item" data-type="animal" data-animal="lion">
@@ -289,6 +242,9 @@
             <button id="gridToggleBtn" class="view-btn active">
                 <span>⊞</span> Grid
             </button>
+            <button id="fenceToolBtn" class="view-btn">
+                <span>🪵</span> Fence Tool
+            </button>
         </div>
     </div>
 
@@ -296,7 +252,7 @@
     <div id="infoPanel">
         <h3>Selection Info</h3>
         <div id="selectionInfo">
-            <p class="info-hint">Click to select or drag to build exhibits!</p>
+            <p class="info-hint">Click on an object to view details</p>
         </div>
     </div>
 
