@@ -3,113 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoo Tycoon 3D - Ultimate Edition</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Zoo Tycoon Web</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="ui">
-        <div id="hud">
+    <!-- Top Bar -->
+    <div id="topBar">
+        <div class="stat-group">
             <div class="stat">
-                <span>💰 Argent:</span>
-                <span id="money">10000</span>€
+                <span class="stat-icon">💰</span>
+                <span class="stat-label">Cash:</span>
+                <span id="money" class="stat-value">$50,000</span>
             </div>
             <div class="stat">
-                <span>👥 Visiteurs:</span>
-                <span id="visitors">0</span>
+                <span class="stat-icon">👥</span>
+                <span class="stat-label">Guests:</span>
+                <span id="guests" class="stat-value">0</span>
             </div>
             <div class="stat">
-                <span>😊 Satisfaction:</span>
-                <span id="satisfaction">100</span>%
+                <span class="stat-icon">😊</span>
+                <span class="stat-label">Zoo Rating:</span>
+                <span id="rating" class="stat-value">0</span>
             </div>
             <div class="stat">
-                <span id="weather-icon">☀️</span>
-                <span id="time">12:00</span>
-            </div>
-            <div class="stat">
-                <span>🦁 Animaux:</span>
-                <span id="animal-count">0</span>
-            </div>
-            <div class="stat">
-                <span>👷 Employés:</span>
-                <span id="employee-count">0</span>
+                <span class="stat-icon">📅</span>
+                <span id="date" class="stat-value">January 2024</span>
             </div>
         </div>
-
-        <div id="menu">
-            <h3>🏗️ Construction</h3>
-            <div class="menu-section">
-                <h4>🦁 Enclos</h4>
-                <button class="build-btn" data-type="enclosure" data-animal="lion">
-                    🦁 Lion (500€)
-                </button>
-                <button class="build-btn" data-type="enclosure" data-animal="elephant">
-                    🐘 Éléphant (700€)
-                </button>
-                <button class="build-btn" data-type="enclosure" data-animal="giraffe">
-                    🦒 Girafe (600€)
-                </button>
-                <button class="build-btn" data-type="enclosure" data-animal="zebra">
-                    🦓 Zèbre (400€)
-                </button>
-            </div>
-            <div class="menu-section">
-                <h4>🏪 Bâtiments</h4>
-                <button class="build-btn" data-type="shop">
-                    🏪 Boutique (300€)
-                </button>
-                <button class="build-btn" data-type="restaurant">
-                    🍽️ Restaurant (500€)
-                </button>
-                <button class="build-btn" data-type="toilet">
-                    🚻 Toilettes (200€)
-                </button>
-                <button class="build-btn" data-type="attraction">
-                    🎪 Attraction (800€)
-                </button>
-                <button class="build-btn" data-type="path">
-                    🛤️ Chemin (50€)
-                </button>
-            </div>
-            <div class="menu-section">
-                <h4>👷 Employés</h4>
-                <button id="hireKeeper" class="build-btn employee">
-                    👨‍🌾 Gardien (50€/j)
-                </button>
-                <button id="hireVet" class="build-btn employee">
-                    👨‍⚕️ Véto (100€/j)
-                </button>
-            </div>
-            <div class="menu-section">
-                <button id="deleteMode" class="build-btn delete">
-                    🗑️ Supprimer
-                </button>
-            </div>
-        </div>
-
-        <div id="info">
-            <p>🎮 Contrôles:</p>
-            <p>ZQSD - Déplacer</p>
-            <p>Molette - Zoom</p>
-            <p>Clic droit - Rotation</p>
-            <p>Clic gauche - Construire</p>
-        </div>
-
-        <div id="animal-panel" class="panel hidden">
-            <h3 id="panel-title">Informations</h3>
-            <button id="close-panel" class="close-btn">✖</button>
-            <div id="panel-content"></div>
+        <div class="speed-controls">
+            <button id="pauseBtn" class="speed-btn">⏸️</button>
+            <button id="speed1Btn" class="speed-btn active">▶️</button>
+            <button id="speed2Btn" class="speed-btn">⏩</button>
+            <button id="speed3Btn" class="speed-btn">⏭️</button>
         </div>
     </div>
 
-    <div id="game-container"></div>
+    <!-- Left Sidebar - Build Menu -->
+    <div id="sidebar">
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="exhibits">
+                <span class="tab-icon">🦁</span>
+                Exhibits
+            </button>
+            <button class="tab-btn" data-tab="paths">
+                <span class="tab-icon">🛤️</span>
+                Paths
+            </button>
+            <button class="tab-btn" data-tab="facilities">
+                <span class="tab-icon">🏪</span>
+                Facilities
+            </button>
+            <button class="tab-btn" data-tab="scenery">
+                <span class="tab-icon">🌳</span>
+                Scenery
+            </button>
+        </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="animals.js"></script>
-    <script src="buildings.js"></script>
-    <script src="camera.js"></script>
-    <script src="visitors.js"></script>
-    <script src="employees.js"></script>
-    <script src="environment.js"></script>
+        <div class="tab-content">
+            <!-- Exhibits Tab -->
+            <div class="tab-panel active" id="exhibits-panel">
+                <h3>Build Exhibit</h3>
+                <div class="item-list">
+                    <div class="build-item" data-type="exhibit" data-size="small">
+                        <div class="item-preview">📦</div>
+                        <div class="item-info">
+                            <div class="item-name">Small Exhibit</div>
+                            <div class="item-cost">$500</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="exhibit" data-size="medium">
+                        <div class="item-preview">📦📦</div>
+                        <div class="item-info">
+                            <div class="item-name">Medium Exhibit</div>
+                            <div class="item-cost">$1,200</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="exhibit" data-size="large">
+                        <div class="item-preview">📦📦📦</div>
+                        <div class="item-info">
+                            <div class="item-name">Large Exhibit</div>
+                            <div class="item-cost">$2,500</div>
+                        </div>
+                    </div>
+                </div>
+                <h3>Animals</h3>
+                <div class="item-list">
+                    <div class="build-item" data-type="animal" data-animal="lion">
+                        <div class="item-preview">🦁</div>
+                        <div class="item-info">
+                            <div class="item-name">Lion</div>
+                            <div class="item-cost">$2,000</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="animal" data-animal="elephant">
+                        <div class="item-preview">🐘</div>
+                        <div class="item-info">
+                            <div class="item-name">Elephant</div>
+                            <div class="item-cost">$3,500</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="animal" data-animal="giraffe">
+                        <div class="item-preview">🦒</div>
+                        <div class="item-info">
+                            <div class="item-name">Giraffe</div>
+                            <div class="item-cost">$2,800</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="animal" data-animal="zebra">
+                        <div class="item-preview">🦓</div>
+                        <div class="item-info">
+                            <div class="item-name">Zebra</div>
+                            <div class="item-cost">$1,500</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paths Tab -->
+            <div class="tab-panel" id="paths-panel">
+                <h3>Path Types</h3>
+                <div class="item-list">
+                    <div class="build-item" data-type="path" data-material="dirt">
+                        <div class="item-preview" style="background: #8B7355"></div>
+                        <div class="item-info">
+                            <div class="item-name">Dirt Path</div>
+                            <div class="item-cost">$10/tile</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="path" data-material="asphalt">
+                        <div class="item-preview" style="background: #555"></div>
+                        <div class="item-info">
+                            <div class="item-name">Asphalt Path</div>
+                            <div class="item-cost">$25/tile</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="path" data-material="cobblestone">
+                        <div class="item-preview" style="background: #999"></div>
+                        <div class="item-info">
+                            <div class="item-name">Cobblestone</div>
+                            <div class="item-cost">$50/tile</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Facilities Tab -->
+            <div class="tab-panel" id="facilities-panel">
+                <h3>Guest Facilities</h3>
+                <div class="item-list">
+                    <div class="build-item" data-type="facility" data-building="food">
+                        <div class="item-preview">🍔</div>
+                        <div class="item-info">
+                            <div class="item-name">Food Stand</div>
+                            <div class="item-cost">$800</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="facility" data-building="drink">
+                        <div class="item-preview">🥤</div>
+                        <div class="item-info">
+                            <div class="item-name">Drink Stand</div>
+                            <div class="item-cost">$600</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="facility" data-building="restroom">
+                        <div class="item-preview">🚻</div>
+                        <div class="item-info">
+                            <div class="item-name">Restroom</div>
+                            <div class="item-cost">$1,000</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="facility" data-building="gift">
+                        <div class="item-preview">🎁</div>
+                        <div class="item-info">
+                            <div class="item-name">Gift Shop</div>
+                            <div class="item-cost">$1,500</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenery Tab -->
+            <div class="tab-panel" id="scenery-panel">
+                <h3>Trees & Plants</h3>
+                <div class="item-list">
+                    <div class="build-item" data-type="scenery" data-item="tree">
+                        <div class="item-preview">🌳</div>
+                        <div class="item-info">
+                            <div class="item-name">Tree</div>
+                            <div class="item-cost">$75</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="scenery" data-item="bush">
+                        <div class="item-preview">🌿</div>
+                        <div class="item-info">
+                            <div class="item-name">Bush</div>
+                            <div class="item-cost">$25</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="scenery" data-item="rock">
+                        <div class="item-preview">🪨</div>
+                        <div class="item-info">
+                            <div class="item-name">Rock</div>
+                            <div class="item-cost">$50</div>
+                        </div>
+                    </div>
+                    <div class="build-item" data-type="scenery" data-item="bench">
+                        <div class="item-preview">🪑</div>
+                        <div class="item-info">
+                            <div class="item-name">Bench</div>
+                            <div class="item-cost">$150</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button id="bulldozeBtn" class="action-btn danger">
+                <span>🗑️</span> Bulldoze
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Game Canvas -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Camera Controls -->
+        <div id="cameraControls">
+            <button id="rotateLeftBtn" class="camera-btn">↶</button>
+            <div class="camera-vertical">
+                <button id="zoomInBtn" class="camera-btn">+</button>
+                <button id="zoomOutBtn" class="camera-btn">−</button>
+            </div>
+            <button id="rotateRightBtn" class="camera-btn">↷</button>
+        </div>
+
+        <!-- Grid Toggle -->
+        <div id="viewControls">
+            <button id="gridToggleBtn" class="view-btn active">
+                <span>⊞</span> Grid
+            </button>
+            <button id="terrainToggleBtn" class="view-btn active">
+                <span>🏔️</span> Terrain
+            </button>
+        </div>
+    </div>
+
+    <!-- Right Panel - Selection Info -->
+    <div id="infoPanel">
+        <h3>Selection Info</h3>
+        <div id="selectionInfo">
+            <p class="info-hint">Click on an object to view details</p>
+        </div>
+    </div>
+
+    <script src="engine/grid.js"></script>
+    <script src="engine/camera.js"></script>
+    <script src="engine/renderer.js"></script>
+    <script src="game/zoo.js"></script>
+    <script src="game/animals.js"></script>
+    <script src="game/buildings.js"></script>
+    <script src="ui/interface.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
