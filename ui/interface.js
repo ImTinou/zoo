@@ -12,6 +12,8 @@ class UIManager {
         this.setupCameraButtons();
         this.setupViewToggles();
         this.setupBulldoze();
+        this.setupEntranceControls();
+        this.setupExpansionControls();
     }
 
     setupTabs() {
@@ -107,13 +109,12 @@ class UIManager {
     }
 
     setupViewToggles() {
-        document.getElementById('gridToggleBtn').addEventListener('click', (e) => {
-            e.currentTarget.classList.toggle('active');
-        });
-
-        document.getElementById('terrainToggleBtn').addEventListener('click', (e) => {
-            e.currentTarget.classList.toggle('active');
-        });
+        const gridBtn = document.getElementById('gridToggleBtn');
+        if (gridBtn) {
+            gridBtn.addEventListener('click', (e) => {
+                e.currentTarget.classList.toggle('active');
+            });
+        }
     }
 
     setupBulldoze() {
@@ -199,5 +200,110 @@ class UIManager {
         if (value > 70) return '#27ae60';
         if (value > 40) return '#f39c12';
         return '#e74c3c';
+    }
+
+    setupEntranceControls() {
+        // Ticket price slider
+        const slider = document.getElementById('ticketPriceSlider');
+        const priceDisplay = document.getElementById('ticketPrice');
+
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const price = parseInt(e.target.value);
+                priceDisplay.textContent = price;
+                if (this.zoo.entrance) {
+                    this.zoo.entrance.setTicketPrice(price);
+                }
+            });
+        }
+
+        // Upgrade entrance button
+        const upgradeBtn = document.getElementById('upgradeEntranceBtn');
+        if (upgradeBtn) {
+            upgradeBtn.addEventListener('click', () => {
+                if (this.zoo.entrance && this.zoo.entrance.upgrade(this.zoo)) {
+                    this.updateEntranceUI();
+                    this.updateStats();
+                    console.log('Entrance upgraded!');
+                } else {
+                    console.log('Cannot upgrade entrance - insufficient funds or max level');
+                }
+            });
+        }
+    }
+
+    setupExpansionControls() {
+        const expandBtn = document.getElementById('expandZooBtn');
+        if (expandBtn) {
+            expandBtn.addEventListener('click', () => {
+                if (this.zoo.expansion.canExpand()) {
+                    const cost = this.zoo.expansion.getExpansionCost();
+                    if (this.zoo.canAfford(cost)) {
+                        // This will be handled by the game instance
+                        const event = new CustomEvent('expandZoo');
+                        window.dispatchEvent(event);
+                    } else {
+                        console.log('Not enough money to expand zoo!');
+                    }
+                } else {
+                    console.log('Zoo is at maximum size!');
+                }
+            });
+        }
+    }
+
+    updateEntranceUI() {
+        const statusEl = document.getElementById('entranceStatus');
+        const controlsEl = document.getElementById('entranceControls');
+        const levelEl = document.getElementById('entranceLevel');
+        const guestsEl = document.getElementById('guestsEntered');
+        const revenueEl = document.getElementById('entranceRevenue');
+
+        if (this.zoo.entrance) {
+            statusEl.textContent = this.zoo.entrance.isOpen ? 'Open' : 'Closed';
+            statusEl.style.color = this.zoo.entrance.isOpen ? '#27ae60' : '#e74c3c';
+            controlsEl.style.display = 'block';
+
+            levelEl.textContent = this.zoo.entrance.upgradeLevel;
+            guestsEl.textContent = this.zoo.entrance.guestsEntered.toLocaleString();
+            revenueEl.textContent = this.zoo.entrance.totalRevenue.toLocaleString();
+
+            const upgradeBtn = document.getElementById('upgradeEntranceBtn');
+            if (this.zoo.entrance.upgradeLevel >= 3) {
+                upgradeBtn.disabled = true;
+                upgradeBtn.textContent = 'Max Level';
+            } else {
+                upgradeBtn.disabled = false;
+                const costs = { 2: 5000, 3: 15000 };
+                const nextLevel = this.zoo.entrance.upgradeLevel + 1;
+                upgradeBtn.textContent = `Upgrade ($${costs[nextLevel].toLocaleString()})`;
+            }
+        } else {
+            statusEl.textContent = 'Not Built';
+            statusEl.style.color = '#e74c3c';
+            controlsEl.style.display = 'none';
+        }
+    }
+
+    updateExpansionUI() {
+        const sizeEl = document.getElementById('zooSize');
+        const costEl = document.getElementById('expansionCostValue');
+        const expandBtn = document.getElementById('expandZooBtn');
+
+        if (this.zoo.expansion) {
+            const size = this.zoo.expansion.currentSize;
+            sizeEl.textContent = `${size}x${size}`;
+
+            if (this.zoo.expansion.canExpand()) {
+                const cost = this.zoo.expansion.getExpansionCost();
+                costEl.textContent = cost.toLocaleString();
+                expandBtn.disabled = false;
+                expandBtn.textContent = 'Expand Zoo';
+            } else {
+                expandBtn.disabled = true;
+                expandBtn.textContent = 'Max Size';
+                costEl.textContent = 'N/A';
+            }
+        }
     }
 }

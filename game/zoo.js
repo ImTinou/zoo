@@ -12,6 +12,9 @@ class Zoo {
         this.buildings = [];
         this.exhibits = [];
 
+        this.entrance = null; // Park entrance
+        this.expansion = new ZooExpansion(); // Zoo expansion system
+
         this.expenses = {
             animalMaintenance: 0,
             staffSalaries: 0,
@@ -69,12 +72,21 @@ class Zoo {
     }
 
     calculateIncome() {
-        // Revenus des entrées basés sur le rating et les attractions
-        const baseAdmission = 20;
-        const attractivenessBonus = this.zooRating / 100;
-        this.income.admissions = Math.floor(
-            this.guestCount * baseAdmission * (1 + attractivenessBonus)
-        );
+        // Revenus des entrées - utilise le prix de ticket de l'entrée si elle existe
+        if (this.entrance && this.entrance.isOpen) {
+            // Simuler l'entrée de visiteurs
+            for (let i = 0; i < this.guestCount; i++) {
+                this.entrance.processGuest();
+            }
+            this.income.admissions = this.entrance.totalRevenue;
+            this.entrance.totalRevenue = 0; // Reset for next month
+        } else {
+            const baseAdmission = 20;
+            const attractivenessBonus = this.zooRating / 100;
+            this.income.admissions = Math.floor(
+                this.guestCount * baseAdmission * (1 + attractivenessBonus)
+            );
+        }
 
         // Revenus des concessions
         const foodStands = this.buildings.filter(b => b.type === 'food').length;

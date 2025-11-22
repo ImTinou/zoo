@@ -181,17 +181,63 @@ class Renderer3D {
         const group = new THREE.Group();
 
         const sizes = {
+            // Savanna
             lion: { body: 0.8, height: 0.6 },
             elephant: { body: 1.2, height: 1.5 },
             giraffe: { body: 0.7, height: 2.0 },
-            zebra: { body: 0.8, height: 0.7 }
+            zebra: { body: 0.8, height: 0.7 },
+            rhinoceros: { body: 1.0, height: 0.8 },
+            // Arctic
+            polarBear: { body: 1.0, height: 0.8 },
+            penguin: { body: 0.4, height: 0.5 },
+            arcticFox: { body: 0.5, height: 0.4 },
+            walrus: { body: 1.1, height: 0.6 },
+            // Jungle
+            panda: { body: 0.7, height: 0.6 },
+            tiger: { body: 0.9, height: 0.7 },
+            gorilla: { body: 0.8, height: 1.2 },
+            parrot: { body: 0.2, height: 0.3 },
+            sloth: { body: 0.4, height: 0.3 },
+            crocodile: { body: 1.2, height: 0.3 },
+            // Desert
+            camel: { body: 0.9, height: 1.0 },
+            meerkat: { body: 0.3, height: 0.4 },
+            rattlesnake: { body: 0.8, height: 0.1 },
+            scorpion: { body: 0.2, height: 0.1 },
+            // Aquatic
+            seal: { body: 0.8, height: 0.4 },
+            otter: { body: 0.5, height: 0.3 },
+            turtle: { body: 0.6, height: 0.3 }
         };
 
         const colors = {
+            // Savanna
             lion: 0xDAA520,
             elephant: 0x808080,
             giraffe: 0xDAA520,
-            zebra: 0xFFFFFF
+            zebra: 0xFFFFFF,
+            rhinoceros: 0x696969,
+            // Arctic
+            polarBear: 0xF0F8FF,
+            penguin: 0x000000,
+            arcticFox: 0xFFFFFF,
+            walrus: 0x8B7355,
+            // Jungle
+            panda: 0xFFFFFF,
+            tiger: 0xFF8C00,
+            gorilla: 0x2F2F2F,
+            parrot: 0xFF0000,
+            sloth: 0x8B7355,
+            crocodile: 0x228B22,
+            // Desert
+            camel: 0xD2B48C,
+            meerkat: 0xC19A6B,
+            rattlesnake: 0x8B7355,
+            scorpion: 0x654321,
+            // Aquatic
+            seal: 0x708090,
+            otter: 0x8B4513,
+            turtle: 0x2E8B57
         };
 
         const size = sizes[animal.species] || sizes.lion;

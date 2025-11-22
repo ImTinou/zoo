@@ -102,14 +102,26 @@ class Animal {
     }
 }
 
+// Biomes disponibles
+const Biomes = {
+    SAVANNA: 'savanna',
+    ARCTIC: 'arctic',
+    JUNGLE: 'jungle',
+    DESERT: 'desert',
+    TEMPERATE: 'temperate',
+    AQUATIC: 'aquatic'
+};
+
 // Définitions des espèces
 const AnimalSpecies = {
+    // SAVANNA BIOME
     lion: {
         name: 'Lion',
         emoji: '🦁',
         cost: 2000,
         attractiveness: 150,
         lifespan: 15,
+        biome: Biomes.SAVANNA,
         habitatNeeds: {
             minSize: 9,
             terrain: 'grass',
@@ -123,6 +135,7 @@ const AnimalSpecies = {
         cost: 3500,
         attractiveness: 200,
         lifespan: 50,
+        biome: Biomes.SAVANNA,
         habitatNeeds: {
             minSize: 16,
             terrain: 'grass',
@@ -136,6 +149,7 @@ const AnimalSpecies = {
         cost: 2800,
         attractiveness: 180,
         lifespan: 25,
+        biome: Biomes.SAVANNA,
         habitatNeeds: {
             minSize: 12,
             terrain: 'grass',
@@ -149,9 +163,270 @@ const AnimalSpecies = {
         cost: 1500,
         attractiveness: 120,
         lifespan: 20,
+        biome: Biomes.SAVANNA,
         habitatNeeds: {
             minSize: 9,
             terrain: 'grass',
+            shelterRequired: false,
+            waterRequired: true
+        }
+    },
+    rhinoceros: {
+        name: 'Rhinoceros',
+        emoji: '🦏',
+        cost: 3200,
+        attractiveness: 170,
+        lifespan: 45,
+        biome: Biomes.SAVANNA,
+        habitatNeeds: {
+            minSize: 14,
+            terrain: 'grass',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+
+    // ARCTIC BIOME
+    polarBear: {
+        name: 'Polar Bear',
+        emoji: '🐻‍❄️',
+        cost: 4500,
+        attractiveness: 250,
+        lifespan: 25,
+        biome: Biomes.ARCTIC,
+        habitatNeeds: {
+            minSize: 16,
+            terrain: 'snow',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    penguin: {
+        name: 'Penguin',
+        emoji: '🐧',
+        cost: 1800,
+        attractiveness: 180,
+        lifespan: 20,
+        biome: Biomes.ARCTIC,
+        habitatNeeds: {
+            minSize: 9,
+            terrain: 'snow',
+            shelterRequired: false,
+            waterRequired: true
+        }
+    },
+    arcticFox: {
+        name: 'Arctic Fox',
+        emoji: '🦊',
+        cost: 2200,
+        attractiveness: 140,
+        lifespan: 10,
+        biome: Biomes.ARCTIC,
+        habitatNeeds: {
+            minSize: 8,
+            terrain: 'snow',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+    walrus: {
+        name: 'Walrus',
+        emoji: '🦭',
+        cost: 3000,
+        attractiveness: 160,
+        lifespan: 40,
+        biome: Biomes.ARCTIC,
+        habitatNeeds: {
+            minSize: 12,
+            terrain: 'snow',
+            shelterRequired: false,
+            waterRequired: true
+        }
+    },
+
+    // JUNGLE BIOME
+    panda: {
+        name: 'Giant Panda',
+        emoji: '🐼',
+        cost: 5000,
+        attractiveness: 280,
+        lifespan: 20,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 12,
+            terrain: 'jungle',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    tiger: {
+        name: 'Tiger',
+        emoji: '🐅',
+        cost: 4200,
+        attractiveness: 240,
+        lifespan: 15,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 14,
+            terrain: 'jungle',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    gorilla: {
+        name: 'Gorilla',
+        emoji: '🦍',
+        cost: 4800,
+        attractiveness: 260,
+        lifespan: 35,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 16,
+            terrain: 'jungle',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    parrot: {
+        name: 'Parrot',
+        emoji: '🦜',
+        cost: 800,
+        attractiveness: 90,
+        lifespan: 50,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 6,
+            terrain: 'jungle',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+    sloth: {
+        name: 'Sloth',
+        emoji: '🦥',
+        cost: 1500,
+        attractiveness: 130,
+        lifespan: 20,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 8,
+            terrain: 'jungle',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+
+    // DESERT BIOME
+    camel: {
+        name: 'Camel',
+        emoji: '🐪',
+        cost: 1800,
+        attractiveness: 110,
+        lifespan: 40,
+        biome: Biomes.DESERT,
+        habitatNeeds: {
+            minSize: 10,
+            terrain: 'sand',
+            shelterRequired: false,
+            waterRequired: false
+        }
+    },
+    meerkat: {
+        name: 'Meerkat',
+        emoji: '🦦',
+        cost: 1200,
+        attractiveness: 100,
+        lifespan: 12,
+        biome: Biomes.DESERT,
+        habitatNeeds: {
+            minSize: 6,
+            terrain: 'sand',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+    rattlesnake: {
+        name: 'Rattlesnake',
+        emoji: '🐍',
+        cost: 900,
+        attractiveness: 80,
+        lifespan: 15,
+        biome: Biomes.DESERT,
+        habitatNeeds: {
+            minSize: 4,
+            terrain: 'sand',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+    scorpion: {
+        name: 'Scorpion',
+        emoji: '🦂',
+        cost: 600,
+        attractiveness: 70,
+        lifespan: 8,
+        biome: Biomes.DESERT,
+        habitatNeeds: {
+            minSize: 4,
+            terrain: 'sand',
+            shelterRequired: true,
+            waterRequired: false
+        }
+    },
+
+    // AQUATIC/TEMPERATE
+    seal: {
+        name: 'Seal',
+        emoji: '🦭',
+        cost: 2500,
+        attractiveness: 150,
+        lifespan: 30,
+        biome: Biomes.AQUATIC,
+        habitatNeeds: {
+            minSize: 12,
+            terrain: 'water',
+            shelterRequired: false,
+            waterRequired: true
+        }
+    },
+    otter: {
+        name: 'Otter',
+        emoji: '🦦',
+        cost: 1600,
+        attractiveness: 140,
+        lifespan: 15,
+        biome: Biomes.AQUATIC,
+        habitatNeeds: {
+            minSize: 8,
+            terrain: 'water',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    crocodile: {
+        name: 'Crocodile',
+        emoji: '🐊',
+        cost: 3200,
+        attractiveness: 190,
+        lifespan: 70,
+        biome: Biomes.JUNGLE,
+        habitatNeeds: {
+            minSize: 14,
+            terrain: 'water',
+            shelterRequired: true,
+            waterRequired: true
+        }
+    },
+    turtle: {
+        name: 'Sea Turtle',
+        emoji: '🐢',
+        cost: 1400,
+        attractiveness: 120,
+        lifespan: 80,
+        biome: Biomes.AQUATIC,
+        habitatNeeds: {
+            minSize: 10,
+            terrain: 'water',
             shelterRequired: false,
             waterRequired: true
         }

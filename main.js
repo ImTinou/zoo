@@ -17,6 +17,12 @@ class Game {
         this.enrichmentMeshes = [];
 
         this.setupControls();
+        this.setupExpansionHandler();
+
+        // Initialize UI
+        this.ui.updateEntranceUI();
+        this.ui.updateExpansionUI();
+
         this.gameLoop();
     }
 
@@ -158,6 +164,26 @@ class Game {
                 this.renderer3d.addPath(gridX, gridY, mode.material);
                 this.ui.updateStats();
             }
+        } else if (mode.type === 'entrance') {
+            // Build park entrance
+            if (this.zoo.entrance) {
+                console.log('Entrance already exists!');
+                return;
+            }
+
+            const entranceCost = 5000;
+            if (this.zoo.spend(entranceCost)) {
+                const entrance = new ParkEntrance(gridX, gridY);
+                this.zoo.entrance = entrance;
+
+                const mesh = entrance.create3DMesh(this.grid.width, this.grid.height);
+                mesh.userData.entrance = entrance;
+                this.renderer3d.getScene().add(mesh);
+
+                this.ui.updateEntranceUI();
+                this.ui.updateStats();
+                console.log('Park entrance built!');
+            }
         } else if (mode.type === 'facility') {
             const spec = BuildingTypes[mode.building];
             if (this.zoo.spend(spec.cost)) {
@@ -225,10 +251,32 @@ class Game {
         }
     }
 
+    setupExpansionHandler() {
+        window.addEventListener('expandZoo', () => {
+            if (this.zoo.expansion.expand(this.zoo, this)) {
+                console.log(`Zoo expanded to ${this.zoo.expansion.currentSize}x${this.zoo.expansion.currentSize}!`);
+
+                // Update fence builder grid reference
+                this.fenceBuilder.grid = this.grid;
+
+                // Recreate grid helper
+                this.renderer3d.createGridHelper();
+
+                // Update UI
+                this.ui.updateExpansionUI();
+                this.ui.updateStats();
+            } else {
+                console.log('Failed to expand zoo!');
+            }
+        });
+    }
+
     update() {
         this.camera3d.update();
         this.zoo.update();
         this.ui.updateStats();
+        this.ui.updateEntranceUI();
+        this.ui.updateExpansionUI();
 
         // Update animal meshes positions
         this.animalMeshes.forEach(({ animal, mesh }) => {
