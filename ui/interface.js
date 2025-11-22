@@ -1,65 +1,229 @@
-// UI Manager
-class UIManager {
+// Modern UI Manager
+class ModernUIManager {
     constructor(zoo) {
         this.zoo = zoo;
-        this.currentTab = 'exhibits';
         this.selectedBuildMode = null;
         this.bulldozeMode = false;
+        this.currentCategory = null;
 
-        this.setupTabs();
-        this.setupBuildItems();
+        this.setupBuildMenu();
         this.setupSpeedControls();
-        this.setupCameraButtons();
-        this.setupViewToggles();
-        this.setupBulldoze();
         this.setupEntranceControls();
         this.setupExpansionControls();
     }
 
-    setupTabs() {
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabPanels = document.querySelectorAll('.tab-panel');
+    setupBuildMenu() {
+        const categoryButtons = document.querySelectorAll('.build-category-btn[data-category]');
+        const buildPanel = document.getElementById('buildPanel');
+        const buildPanelContent = document.getElementById('buildPanelContent');
 
-        tabButtons.forEach(btn => {
+        categoryButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                const tabName = btn.dataset.tab;
+                const category = btn.dataset.category;
 
-                // Désactiver tous les tabs
-                tabButtons.forEach(b => b.classList.remove('active'));
-                tabPanels.forEach(p => p.classList.remove('active'));
+                // Toggle panel
+                if (this.currentCategory === category && buildPanel.classList.contains('active')) {
+                    buildPanel.classList.remove('active');
+                    this.currentCategory = null;
+                    btn.classList.remove('active');
+                } else {
+                    // Deactivate all
+                    categoryButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
 
-                // Activer le tab sélectionné
-                btn.classList.add('active');
-                document.getElementById(`${tabName}-panel`).classList.add('active');
+                    // Show panel with content
+                    this.currentCategory = category;
+                    buildPanelContent.innerHTML = this.getBuildContent(category);
+                    buildPanel.classList.add('active');
 
-                this.currentTab = tabName;
+                    // Setup card listeners
+                    this.setupBuildCards();
+                }
             });
+        });
+
+        // Bulldoze button
+        const bulldozeBtn = document.getElementById('bulldozeBtn');
+        bulldozeBtn.addEventListener('click', () => {
+            this.bulldozeMode = !this.bulldozeMode;
+            bulldozeBtn.classList.toggle('active');
+
+            if (this.bulldozeMode) {
+                buildPanel.classList.remove('active');
+                categoryButtons.forEach(b => b.classList.remove('active'));
+                this.currentCategory = null;
+            }
         });
     }
 
-    setupBuildItems() {
-        const buildItems = document.querySelectorAll('.build-item');
+    getBuildContent(category) {
+        const content = {
+            animals: this.getAnimalsContent(),
+            exhibits: this.getExhibitsContent(),
+            paths: this.getPathsContent(),
+            facilities: this.getFacilitiesContent(),
+            scenery: this.getSceneryContent(),
+            staff: this.getStaffContent()
+        };
 
-        buildItems.forEach(item => {
-            item.addEventListener('click', () => {
-                // Désélectionner tous les items
-                buildItems.forEach(i => i.classList.remove('active'));
+        return `<div class="build-grid">${content[category] || ''}</div>`;
+    }
 
-                // Désactiver le bulldoze
+    getAnimalsContent() {
+        const biomes = {
+            'Savanna': ['lion', 'elephant', 'giraffe', 'zebra', 'rhinoceros'],
+            'Arctic': ['polarBear', 'penguin', 'arcticFox', 'walrus'],
+            'Jungle': ['panda', 'tiger', 'gorilla', 'parrot', 'sloth', 'crocodile'],
+            'Desert': ['camel', 'meerkat', 'rattlesnake', 'scorpion'],
+            'Aquatic': ['seal', 'otter', 'turtle']
+        };
+
+        let html = '';
+        for (const [biome, animals] of Object.entries(biomes)) {
+            html += `<div style="grid-column: 1/-1; color: #fff; font-weight: 600; margin-top: 12px;">${biome}</div>`;
+            animals.forEach(animal => {
+                const spec = AnimalSpecies[animal];
+                html += `
+                    <div class="build-card" data-type="animal" data-animal="${animal}">
+                        <div class="build-card-icon">${spec.emoji}</div>
+                        <div class="build-card-name">${spec.name}</div>
+                        <div class="build-card-cost">$${spec.cost.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+        }
+        return html;
+    }
+
+    getExhibitsContent() {
+        const fences = [
+            { type: 'wood', icon: '🪵', name: 'Wooden Fence', cost: 50 },
+            { type: 'metal', icon: '⛓️', name: 'Metal Fence', cost: 100 },
+            { type: 'glass', icon: '🪟', name: 'Glass Fence', cost: 150 },
+            { type: 'moat', icon: '🌊', name: 'Moat', cost: 200 }
+        ];
+
+        const enrichments = [
+            { type: 'waterPond', icon: '💧', name: 'Water Pond', cost: 200 },
+            { type: 'tree', icon: '🌳', name: 'Tree', cost: 100 },
+            { type: 'rock', icon: '🪨', name: 'Rock', cost: 75 },
+            { type: 'shelter', icon: '🏠', name: 'Shelter', cost: 300 },
+            { type: 'feeder', icon: '🍖', name: 'Feeder', cost: 150 }
+        ];
+
+        let html = '<div style="grid-column: 1/-1; color: #fff; font-weight: 600;">Fences (Drag to Build)</div>';
+        fences.forEach(fence => {
+            html += `
+                <div class="build-card" data-type="fence" data-fence="${fence.type}">
+                    <div class="build-card-icon">${fence.icon}</div>
+                    <div class="build-card-name">${fence.name}</div>
+                    <div class="build-card-cost">$${fence.cost}/tile</div>
+                </div>
+            `;
+        });
+
+        html += '<div style="grid-column: 1/-1; color: #fff; font-weight: 600; margin-top: 12px;">Enrichments</div>';
+        enrichments.forEach(enrich => {
+            html += `
+                <div class="build-card" data-type="enrichment" data-item="${enrich.type}">
+                    <div class="build-card-icon">${enrich.icon}</div>
+                    <div class="build-card-name">${enrich.name}</div>
+                    <div class="build-card-cost">$${enrich.cost}</div>
+                </div>
+            `;
+        });
+
+        return html;
+    }
+
+    getPathsContent() {
+        const paths = [
+            { material: 'dirt', name: 'Dirt Path', cost: 10, color: '#8B7355' },
+            { material: 'asphalt', name: 'Asphalt', cost: 25, color: '#555' },
+            { material: 'cobblestone', name: 'Cobblestone', cost: 50, color: '#999' }
+        ];
+
+        return paths.map(path => `
+            <div class="build-card" data-type="path" data-material="${path.material}">
+                <div class="build-card-icon" style="width: 48px; height: 48px; background: ${path.color}; border-radius: 8px;"></div>
+                <div class="build-card-name">${path.name}</div>
+                <div class="build-card-cost">$${path.cost}/tile</div>
+            </div>
+        `).join('');
+    }
+
+    getFacilitiesContent() {
+        const facilities = [
+            { building: 'entrance', icon: '🎪', name: 'Park Entrance', cost: 5000 },
+            { building: 'food', icon: '🍔', name: 'Food Stand', cost: 800 },
+            { building: 'drink', icon: '🥤', name: 'Drink Stand', cost: 600 },
+            { building: 'restroom', icon: '🚻', name: 'Restroom', cost: 1000 },
+            { building: 'gift', icon: '🎁', name: 'Gift Shop', cost: 1500 }
+        ];
+
+        return facilities.map(fac => `
+            <div class="build-card" data-type="${fac.building === 'entrance' ? 'entrance' : 'facility'}" data-building="${fac.building}">
+                <div class="build-card-icon">${fac.icon}</div>
+                <div class="build-card-name">${fac.name}</div>
+                <div class="build-card-cost">$${fac.cost.toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+
+    getSceneryContent() {
+        const scenery = [
+            { item: 'tree', icon: '🌳', name: 'Tree', cost: 75 },
+            { item: 'bush', icon: '🌿', name: 'Bush', cost: 25 },
+            { item: 'rock', icon: '🪨', name: 'Rock', cost: 50 },
+            { item: 'bench', icon: '🪑', name: 'Bench', cost: 150 }
+        ];
+
+        return scenery.map(item => `
+            <div class="build-card" data-type="scenery" data-item="${item.item}">
+                <div class="build-card-icon">${item.icon}</div>
+                <div class="build-card-name">${item.name}</div>
+                <div class="build-card-cost">$${item.cost}</div>
+            </div>
+        `).join('');
+    }
+
+    getStaffContent() {
+        const staff = [
+            { type: 'zookeeper', icon: '👨‍🌾', name: 'Zookeeper', cost: 500, salary: 200 },
+            { type: 'vet', icon: '👨‍⚕️', name: 'Veterinarian', cost: 800, salary: 350 },
+            { type: 'maintenance', icon: '👷', name: 'Maintenance', cost: 400, salary: 150 },
+            { type: 'security', icon: '👮', name: 'Security', cost: 600, salary: 250 }
+        ];
+
+        return staff.map(s => `
+            <div class="build-card" data-type="staff" data-staff="${s.type}">
+                <div class="build-card-icon">${s.icon}</div>
+                <div class="build-card-name">${s.name}</div>
+                <div class="build-card-cost">$${s.cost} (${s.salary}/mo)</div>
+            </div>
+        `).join('');
+    }
+
+    setupBuildCards() {
+        const cards = document.querySelectorAll('.build-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Deselect all
+                cards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+
+                // Set build mode
                 this.bulldozeMode = false;
                 document.getElementById('bulldozeBtn').classList.remove('active');
 
-                // Sélectionner l'item
-                item.classList.add('active');
-
-                // Stocker le mode de construction
                 this.selectedBuildMode = {
-                    type: item.dataset.type,
-                    size: item.dataset.size,
-                    animal: item.dataset.animal,
-                    material: item.dataset.material,
-                    building: item.dataset.building,
-                    item: item.dataset.item
+                    type: card.dataset.type,
+                    animal: card.dataset.animal,
+                    fence: card.dataset.fence,
+                    material: card.dataset.material,
+                    building: card.dataset.building,
+                    item: card.dataset.item,
+                    staff: card.dataset.staff
                 };
             });
         });
@@ -103,107 +267,7 @@ class UIManager {
         }
     }
 
-    setupCameraButtons() {
-        // Ces boutons seront liés à la caméra dans main.js
-        // Juste pour éviter les erreurs
-    }
-
-    setupViewToggles() {
-        const gridBtn = document.getElementById('gridToggleBtn');
-        if (gridBtn) {
-            gridBtn.addEventListener('click', (e) => {
-                e.currentTarget.classList.toggle('active');
-            });
-        }
-    }
-
-    setupBulldoze() {
-        document.getElementById('bulldozeBtn').addEventListener('click', () => {
-            this.bulldozeMode = !this.bulldozeMode;
-
-            if (this.bulldozeMode) {
-                // Désélectionner les items de construction
-                document.querySelectorAll('.build-item').forEach(i => i.classList.remove('active'));
-                document.getElementById('bulldozeBtn').classList.add('active');
-                this.selectedBuildMode = null;
-            } else {
-                document.getElementById('bulldozeBtn').classList.remove('active');
-            }
-        });
-    }
-
-    updateStats() {
-        document.getElementById('money').textContent = `$${this.zoo.money.toLocaleString()}`;
-        document.getElementById('guests').textContent = this.zoo.guestCount.toLocaleString();
-        document.getElementById('rating').textContent = this.zoo.zooRating;
-        document.getElementById('date').textContent = this.zoo.getDateString();
-    }
-
-    showSelectionInfo(data) {
-        const infoDiv = document.getElementById('selectionInfo');
-
-        if (!data) {
-            infoDiv.innerHTML = '<p class="info-hint">Click on an object to view details</p>';
-            return;
-        }
-
-        let html = '';
-
-        if (data.type === 'animal') {
-            const info = data.animal.getInfo();
-            html = `
-                <h4>${info.name} the ${AnimalSpecies[info.species].name}</h4>
-                <div style="margin-top: 15px;">
-                    <div class="stat-bar">
-                        <span>Happiness:</span>
-                        <div class="bar">
-                            <div class="bar-fill" style="width: ${info.happiness}%; background: ${this.getBarColor(info.happiness)}"></div>
-                        </div>
-                        <span>${info.happiness}%</span>
-                    </div>
-                    <div class="stat-bar">
-                        <span>Health:</span>
-                        <div class="bar">
-                            <div class="bar-fill" style="width: ${info.health}%; background: ${this.getBarColor(info.health)}"></div>
-                        </div>
-                        <span>${info.health}%</span>
-                    </div>
-                    <div class="stat-bar">
-                        <span>Hunger:</span>
-                        <div class="bar">
-                            <div class="bar-fill" style="width: ${info.hunger}%; background: ${this.getBarColor(info.hunger)}"></div>
-                        </div>
-                        <span>${info.hunger}%</span>
-                    </div>
-                    <p style="margin-top: 10px;">Age: ${info.age} years</p>
-                </div>
-            `;
-        } else if (data.type === 'building') {
-            html = `
-                <h4>${data.building.name}</h4>
-                <p>Type: ${data.building.type}</p>
-                <p>Cost: $${data.building.cost}</p>
-            `;
-        } else if (data.type === 'tile') {
-            html = `
-                <h4>Tile Information</h4>
-                <p>Position: (${data.x}, ${data.y})</p>
-                <p>Terrain: ${data.tile.terrain}</p>
-                ${data.tile.path ? `<p>Path: ${data.tile.path}</p>` : ''}
-            `;
-        }
-
-        infoDiv.innerHTML = html;
-    }
-
-    getBarColor(value) {
-        if (value > 70) return '#27ae60';
-        if (value > 40) return '#f39c12';
-        return '#e74c3c';
-    }
-
     setupEntranceControls() {
-        // Ticket price slider
         const slider = document.getElementById('ticketPriceSlider');
         const priceDisplay = document.getElementById('ticketPrice');
 
@@ -217,16 +281,12 @@ class UIManager {
             });
         }
 
-        // Upgrade entrance button
         const upgradeBtn = document.getElementById('upgradeEntranceBtn');
         if (upgradeBtn) {
             upgradeBtn.addEventListener('click', () => {
                 if (this.zoo.entrance && this.zoo.entrance.upgrade(this.zoo)) {
                     this.updateEntranceUI();
                     this.updateStats();
-                    console.log('Entrance upgraded!');
-                } else {
-                    console.log('Cannot upgrade entrance - insufficient funds or max level');
                 }
             });
         }
@@ -237,36 +297,41 @@ class UIManager {
         if (expandBtn) {
             expandBtn.addEventListener('click', () => {
                 if (this.zoo.expansion.canExpand()) {
-                    const cost = this.zoo.expansion.getExpansionCost();
-                    if (this.zoo.canAfford(cost)) {
-                        // This will be handled by the game instance
-                        const event = new CustomEvent('expandZoo');
-                        window.dispatchEvent(event);
-                    } else {
-                        console.log('Not enough money to expand zoo!');
-                    }
-                } else {
-                    console.log('Zoo is at maximum size!');
+                    const event = new CustomEvent('expandZoo');
+                    window.dispatchEvent(event);
                 }
             });
         }
     }
 
+    updateStats() {
+        document.getElementById('money').textContent = `$${this.zoo.money.toLocaleString()}`;
+        document.getElementById('guests').textContent = this.zoo.guestCount.toLocaleString();
+        document.getElementById('rating').textContent = this.zoo.zooRating;
+        document.getElementById('date').textContent = this.zoo.getDateString().substring(0, 8);
+
+        // Financial
+        const income = this.zoo.getTotalIncome();
+        const expenses = this.zoo.getTotalExpenses();
+        const net = income - expenses;
+
+        document.getElementById('totalIncome').textContent = `$${income.toLocaleString()}`;
+        document.getElementById('totalExpenses').textContent = `$${expenses.toLocaleString()}`;
+        document.getElementById('netIncome').textContent = `$${net.toLocaleString()}`;
+        document.getElementById('netIncome').style.color = net >= 0 ? '#30d158' : '#ff453a';
+    }
+
     updateEntranceUI() {
         const statusEl = document.getElementById('entranceStatus');
         const controlsEl = document.getElementById('entranceControls');
-        const levelEl = document.getElementById('entranceLevel');
-        const guestsEl = document.getElementById('guestsEntered');
-        const revenueEl = document.getElementById('entranceRevenue');
 
         if (this.zoo.entrance) {
             statusEl.textContent = this.zoo.entrance.isOpen ? 'Open' : 'Closed';
-            statusEl.style.color = this.zoo.entrance.isOpen ? '#27ae60' : '#e74c3c';
+            statusEl.style.color = this.zoo.entrance.isOpen ? '#30d158' : '#ff453a';
             controlsEl.style.display = 'block';
 
-            levelEl.textContent = this.zoo.entrance.upgradeLevel;
-            guestsEl.textContent = this.zoo.entrance.guestsEntered.toLocaleString();
-            revenueEl.textContent = this.zoo.entrance.totalRevenue.toLocaleString();
+            document.getElementById('entranceLevel').textContent = this.zoo.entrance.upgradeLevel;
+            document.getElementById('guestsEntered').textContent = this.zoo.entrance.guestsEntered.toLocaleString();
 
             const upgradeBtn = document.getElementById('upgradeEntranceBtn');
             if (this.zoo.entrance.upgradeLevel >= 3) {
@@ -278,31 +343,23 @@ class UIManager {
                 const nextLevel = this.zoo.entrance.upgradeLevel + 1;
                 upgradeBtn.textContent = `Upgrade ($${costs[nextLevel].toLocaleString()})`;
             }
-        } else {
-            statusEl.textContent = 'Not Built';
-            statusEl.style.color = '#e74c3c';
-            controlsEl.style.display = 'none';
         }
     }
 
     updateExpansionUI() {
-        const sizeEl = document.getElementById('zooSize');
-        const costEl = document.getElementById('expansionCostValue');
-        const expandBtn = document.getElementById('expandZooBtn');
-
         if (this.zoo.expansion) {
             const size = this.zoo.expansion.currentSize;
-            sizeEl.textContent = `${size}x${size}`;
+            document.getElementById('zooSize').textContent = `${size}x${size}`;
 
+            const expandBtn = document.getElementById('expandZooBtn');
             if (this.zoo.expansion.canExpand()) {
                 const cost = this.zoo.expansion.getExpansionCost();
-                costEl.textContent = cost.toLocaleString();
+                document.getElementById('expansionCostValue').textContent = cost.toLocaleString();
                 expandBtn.disabled = false;
                 expandBtn.textContent = 'Expand Zoo';
             } else {
                 expandBtn.disabled = true;
                 expandBtn.textContent = 'Max Size';
-                costEl.textContent = 'N/A';
             }
         }
     }
