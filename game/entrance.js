@@ -142,6 +142,9 @@ class ZooExpansion {
         const cost = this.getExpansionCost();
         if (!zoo.spend(cost)) return false;
 
+        // Sauvegarder l'ancienne taille
+        const oldSize = this.currentSize;
+
         // Augmenter la taille de la grille
         this.currentSize += this.expansionIncrement;
 
@@ -161,8 +164,53 @@ class ZooExpansion {
         }
 
         // Recréer le terrain avec la nouvelle taille
+        game.renderer3d.grid = game.grid;
         game.renderer3d.createTerrain();
 
+        // Recréer tous les objets sur la scène avec les nouvelles positions
+        this.updateAllObjectPositions(game, oldSize);
+
         return true;
+    }
+
+    updateAllObjectPositions(game, oldSize) {
+        const newSize = this.currentSize;
+        const scene = game.renderer3d.getScene();
+
+        // Mettre à jour les chemins et bâtiments
+        game.renderer3d.objects.forEach((mesh, key) => {
+            scene.remove(mesh);
+        });
+        game.renderer3d.objects.clear();
+
+        // Recréer les chemins
+        for (let y = 0; y < newSize; y++) {
+            for (let x = 0; x < newSize; x++) {
+                const tile = game.grid.getTile(x, y);
+                if (tile && tile.path) {
+                    game.renderer3d.addPath(x, y, tile.path.material);
+                }
+                if (tile && tile.building) {
+                    game.renderer3d.addBuilding(tile.building);
+                }
+            }
+        }
+
+        // Mettre à jour l'entrée
+        if (game.entranceMesh && zoo.entrance) {
+            scene.remove(game.entranceMesh);
+            game.entranceMesh = zoo.entrance.create3DMesh(newSize, newSize);
+            scene.add(game.entranceMesh);
+        }
+
+        // Mettre à jour les enrichissements
+        game.enrichmentMeshes.forEach(mesh => {
+            const enrichment = mesh.userData.enrichment;
+            if (enrichment) {
+                const worldX = enrichment.x * 2 - newSize;
+                const worldZ = enrichment.y * 2 - newSize;
+                mesh.position.set(worldX, mesh.position.y, worldZ);
+            }
+        });
     }
 }

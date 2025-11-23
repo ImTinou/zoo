@@ -52,6 +52,15 @@ const BuildingTypes = {
         colorDark: '#CC4984',
         roofColor: '#FFB6C1',
         height: 40
+    },
+    research: {
+        name: 'Research Center',
+        cost: 5000,
+        emoji: '🔬',
+        color: '#32CD32',
+        colorDark: '#228B22',
+        roofColor: '#00FA9A',
+        height: 45
     }
 };
 

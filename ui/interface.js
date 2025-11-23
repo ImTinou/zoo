@@ -92,6 +92,25 @@ class ModernUIManager {
                 `;
             });
         }
+
+        // Ajouter les animaux rares débloqués
+        const unlockedRares = this.zoo.unlockedAnimals || [];
+        if (unlockedRares.length > 0) {
+            html += `<div style="grid-column: 1/-1; color: #ffd60a; font-weight: 600; margin-top: 12px;">⭐ Rare Animals</div>`;
+            unlockedRares.forEach(animalKey => {
+                const spec = RareAnimals[animalKey];
+                if (spec) {
+                    html += `
+                        <div class="build-card rare" data-type="animal" data-animal="${animalKey}" style="border: 2px solid #ffd60a;">
+                            <div class="build-card-icon">${spec.emoji}</div>
+                            <div class="build-card-name">${spec.name}</div>
+                            <div class="build-card-cost">$${spec.cost.toLocaleString()}</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
         return html;
     }
 
@@ -118,6 +137,18 @@ class ModernUIManager {
                     <div class="build-card-icon">${fence.icon}</div>
                     <div class="build-card-name">${fence.name}</div>
                     <div class="build-card-cost">$${fence.cost}/tile</div>
+                </div>
+            `;
+        });
+
+        // Terrain types
+        html += '<div style="grid-column: 1/-1; color: #fff; font-weight: 600; margin-top: 12px;">Terrain Types</div>';
+        Object.entries(TerrainTypes).forEach(([key, terrain]) => {
+            html += `
+                <div class="build-card" data-type="terrain" data-terrain="${key}">
+                    <div class="build-card-icon">${terrain.emoji}</div>
+                    <div class="build-card-name">${terrain.name}</div>
+                    <div class="build-card-cost">${terrain.cost === 0 ? 'Free' : '$' + terrain.cost + '/tile'}</div>
                 </div>
             `;
         });
@@ -154,15 +185,15 @@ class ModernUIManager {
 
     getFacilitiesContent() {
         const facilities = [
-            { building: 'entrance', icon: '🎪', name: 'Park Entrance', cost: 5000 },
             { building: 'food', icon: '🍔', name: 'Food Stand', cost: 800 },
             { building: 'drink', icon: '🥤', name: 'Drink Stand', cost: 600 },
             { building: 'restroom', icon: '🚻', name: 'Restroom', cost: 1000 },
-            { building: 'gift', icon: '🎁', name: 'Gift Shop', cost: 1500 }
+            { building: 'gift', icon: '🎁', name: 'Gift Shop', cost: 1500 },
+            { building: 'research', icon: '🔬', name: 'Research Center', cost: 5000 }
         ];
 
         return facilities.map(fac => `
-            <div class="build-card" data-type="${fac.building === 'entrance' ? 'entrance' : 'facility'}" data-building="${fac.building}">
+            <div class="build-card" data-type="facility" data-building="${fac.building}">
                 <div class="build-card-icon">${fac.icon}</div>
                 <div class="build-card-name">${fac.name}</div>
                 <div class="build-card-cost">$${fac.cost.toLocaleString()}</div>
@@ -223,7 +254,8 @@ class ModernUIManager {
                     material: card.dataset.material,
                     building: card.dataset.building,
                     item: card.dataset.item,
-                    staff: card.dataset.staff
+                    staff: card.dataset.staff,
+                    terrain: card.dataset.terrain
                 };
             });
         });
@@ -307,7 +339,15 @@ class ModernUIManager {
     updateStats() {
         document.getElementById('money').textContent = `$${this.zoo.money.toLocaleString()}`;
         document.getElementById('guests').textContent = this.zoo.guestCount.toLocaleString();
+
+        // Rating avec satisfaction des visiteurs
+        const visitorMgr = window.game && window.game.visitorManager;
+        const satisfactionStars = visitorMgr
+            ? '⭐'.repeat(Math.round(visitorMgr.averageSatisfaction))
+            : '';
         document.getElementById('rating').textContent = this.zoo.zooRating;
+        document.getElementById('rating').title = `Satisfaction: ${satisfactionStars} (${visitorMgr ? visitorMgr.averageSatisfaction.toFixed(1) : '0'}/5)`;
+
         document.getElementById('date').textContent = this.zoo.getDateString().substring(0, 8);
 
         // Financial

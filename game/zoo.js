@@ -14,6 +14,7 @@ class Zoo {
 
         this.entrance = null; // Park entrance
         this.expansion = new ZooExpansion(); // Zoo expansion system
+        this.unlockedAnimals = []; // Animaux rares débloqués via le centre de recherche
 
         this.expenses = {
             animalMaintenance: 0,
@@ -145,16 +146,26 @@ class Zoo {
             return;
         }
 
-        // Rating basé sur le bonheur des animaux
+        // Rating basé sur le bonheur des animaux (40%)
         const animalHappiness = this.animals.reduce(
             (sum, animal) => sum + animal.happiness, 0
         ) / this.animals.length;
 
-        // Rating basé sur les installations
+        // Rating basé sur les installations (20%)
         const facilityRating = Math.min(100, this.buildings.length * 5);
 
+        // Rating basé sur la satisfaction des visiteurs (40%)
+        // Convertir la satisfaction 0-5 en 0-100
+        const visitorSatisfaction = window.game && window.game.visitorManager
+            ? (window.game.visitorManager.averageSatisfaction / 5) * 100
+            : 50;
+
         // Rating global
-        this.zooRating = Math.floor((animalHappiness * 0.7 + facilityRating * 0.3));
+        this.zooRating = Math.floor(
+            animalHappiness * 0.4 +
+            facilityRating * 0.2 +
+            visitorSatisfaction * 0.4
+        );
     }
 
     addAnimal(animal) {

@@ -6,12 +6,16 @@ class Game {
         this.camera3d = new Camera3D(this.container);
         this.renderer3d = new Renderer3D(this.container, this.grid, this.camera3d);
         this.fenceBuilder = new FenceBuilder(this.renderer3d, this.grid);
+        this.pathBuilder = new PathBuilder(this.renderer3d, this.grid);
+        this.terrainManager = new TerrainManager(this.renderer3d);
         this.animalFactory = new AnimalModelFactory();
         this.zoo = new Zoo();
         this.ui = new ModernUIManager(this.zoo);
         this.notifications = new NotificationManager();
         this.minimap = new Minimap(this.grid, this.camera3d);
         this.visitorManager = new VisitorManager(this.zoo, this.grid);
+        this.saveSystem = new SaveSystem();
+        this.minigameUI = new MinigameUI(this.zoo);
 
         this.currentMousePos = null;
         this.isDragging = false;
@@ -19,21 +23,41 @@ class Game {
         this.animalMeshes = [];
         this.visitorMeshes = [];
         this.enrichmentMeshes = [];
+        this.entranceMesh = null;
 
         this.setupControls();
         this.setupExpansionHandler();
         this.setupMinimapHandler();
+        this.setupSaveControls();
+
+        // Charger la sauvegarde si elle existe
+        if (this.saveSystem.hasSave()) {
+            const saveData = this.saveSystem.loadGame();
+            if (saveData) {
+                this.saveSystem.applyLoadedData(this, saveData);
+                this.notifications.success('Game Loaded!', 'Your zoo has been restored', '💾');
+            } else {
+                this.createDefaultEntrance();
+            }
+        } else {
+            this.createDefaultEntrance();
+        }
+
+        // Démarrer l'auto-save
+        this.saveSystem.startAutoSave(this);
 
         // Initialize UI
         this.ui.updateEntranceUI();
         this.ui.updateExpansionUI();
 
         // Welcome notification
-        this.notifications.success(
-            'Welcome to Zoo Tycoon 3D!',
-            'Build exhibits, add animals, and create the best zoo!',
-            '🎉'
-        );
+        if (!this.saveSystem.hasSave()) {
+            this.notifications.success(
+                'Welcome to Zoo Tycoon 3D!',
+                'Build exhibits, add animals, and create the best zoo!',
+                '🎉'
+            );
+        }
 
         this.gameLoop();
     }
@@ -101,6 +125,38 @@ class Game {
         });
     }
 
+    setupSaveControls() {
+        // Sauvegarder avec Ctrl+S
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                this.saveSystem.saveGame(this);
+                this.notifications.success('Game Saved!', 'Your progress has been saved', '💾');
+            }
+        });
+    }
+
+    createDefaultEntrance() {
+        // Placer l'entrée en bas au centre de la map (gratuit au démarrage)
+        const entranceX = Math.floor(this.grid.width / 2);
+        const entranceY = this.grid.height - 5; // 5 cases du bord
+
+        const entrance = new ParkEntrance(entranceX, entranceY);
+        this.zoo.entrance = entrance;
+
+        // Créer le mesh 3D
+        this.entranceMesh = entrance.create3DMesh(this.grid.width, this.grid.height);
+        this.entranceMesh.userData.entrance = entrance;
+        this.renderer3d.getScene().add(this.entranceMesh);
+
+        // Créer un chemin de base devant l'entrée (5 tuiles vers le centre)
+        for (let i = 1; i <= 5; i++) {
+            const pathY = entranceY - i;
+            this.grid.placePath(entranceX, pathY, 'asphalt');
+            this.renderer3d.addPath(entranceX, pathY, 'asphalt');
+        }
+    }
+
     onMouseDown(e) {
         const rect = e.target.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -127,10 +183,140 @@ class Game {
             this.fenceBuilder.setFenceType(this.ui.selectedBuildMode.fence);
             this.fenceBuilder.startDrawing(gridX, gridY);
             this.isDragging = true;
+        } else if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'path') {
+            // Mode chemin - démarrer le drag
+            this.pathBuilder.startDrawing(gridX, gridY, this.ui.selectedBuildMode.material);
+            this.isDragging = true;
+        } else if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'terrain') {
+            // Mode terrain - modifier le terrain d'un enclos existant
+            this.handleTerrainChange(gridX, gridY);
         } else if (this.ui.bulldozeMode) {
             this.handleBulldoze(gridX, gridY);
         } else if (this.ui.selectedBuildMode) {
             this.handleBuild(gridX, gridY);
+        } else {
+            // Vérifier si on clique sur un bâtiment (centre de recherche) ou un enclos
+            this.handleBuildingClick(gridX, gridY);
+            this.handleExhibitClick(gridX, gridY);
+        }
+    }
+
+    handleTerrainChange(gridX, gridY) {
+        const tile = this.grid.getTile(gridX, gridY);
+        if (!tile || !tile.exhibit) {
+            this.notifications.warning('No Exhibit', 'Click inside an exhibit to change its terrain!');
+            return;
+        }
+
+        const terrainType = this.ui.selectedBuildMode.terrain;
+        const cost = this.terrainManager.getCostToChange(tile.exhibit, terrainType);
+
+        if (this.zoo.spend(cost)) {
+            this.terrainManager.applyTerrainToExhibit(tile.exhibit, terrainType);
+            this.ui.updateStats();
+            this.notifications.success(
+                'Terrain Changed!',
+                `${TerrainTypes[terrainType].name} - $${cost.toLocaleString()}`,
+                TerrainTypes[terrainType].emoji
+            );
+        } else {
+            this.notifications.error('Not Enough Money', `Need $${cost.toLocaleString()}`);
+        }
+    }
+
+    handleExhibitClick(gridX, gridY) {
+        const tile = this.grid.getTile(gridX, gridY);
+        if (tile && tile.exhibit) {
+            this.showExhibitInfo(tile.exhibit);
+        }
+    }
+
+    showExhibitInfo(exhibit) {
+        const terrain = TerrainTypes[exhibit.terrain] || TerrainTypes.grass;
+        const selectionInfo = document.getElementById('selectionInfo');
+
+        // Calculate average happiness
+        let avgHappiness = 0;
+        if (exhibit.animals.length > 0) {
+            const totalHappiness = exhibit.animals.reduce((sum, animal) => sum + animal.happiness, 0);
+            avgHappiness = Math.round(totalHappiness / exhibit.animals.length);
+        }
+
+        const happinessColor = avgHappiness >= 80 ? '#30d158' : avgHappiness >= 50 ? '#ffd60a' : '#ff453a';
+
+        selectionInfo.innerHTML = `
+            <h3>🏗️ Exhibit Info</h3>
+            <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Size:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${exhibit.width}x${exhibit.height}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Terrain:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${terrain.emoji} ${terrain.name}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Animals:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${exhibit.animals.length}</span>
+                </div>
+                ${exhibit.animals.length > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #8e8ea0; font-size: 12px;">Happiness:</span>
+                        <span style="color: ${happinessColor}; font-size: 12px; font-weight: 600;">${avgHappiness}%</span>
+                    </div>
+                ` : ''}
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Has Shelter:</span>
+                    <span style="color: ${exhibit.hasShelter ? '#30d158' : '#ff453a'}; font-size: 12px;">${exhibit.hasShelter ? '✓' : '✗'}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Has Water:</span>
+                    <span style="color: ${exhibit.hasWater ? '#30d158' : '#ff453a'}; font-size: 12px;">${exhibit.hasWater ? '✓' : '✗'}</span>
+                </div>
+            </div>
+            ${exhibit.animals.length > 0 ? `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3c;">
+                    <h4 style="color: #fff; font-size: 13px; margin-bottom: 8px;">Animals in Exhibit:</h4>
+                    ${exhibit.animals.map(animal => {
+                        const spec = AnimalSpecies[animal.species] || RareAnimals[animal.species];
+                        return `
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding: 6px; background: #2c2c2e; border-radius: 6px;">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="font-size: 20px; margin-right: 8px;">${spec.emoji}</span>
+                                    <span style="color: #fff; font-size: 11px;">${spec.name}</span>
+                                </div>
+                                <span style="color: ${animal.happiness >= 80 ? '#30d158' : animal.happiness >= 50 ? '#ffd60a' : '#ff453a'}; font-size: 11px; font-weight: 600;">${Math.round(animal.happiness)}%</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : ''}
+            <button id="changeTerrainBtn" class="btn" style="width: 100%; padding: 8px; margin-top: 12px;">
+                🌍 Change Terrain
+            </button>
+        `;
+
+        // Add event listener for change terrain button
+        document.getElementById('changeTerrainBtn').addEventListener('click', () => {
+            // Open the exhibits category to show terrain options
+            const exhibitsBtn = document.querySelector('.build-category-btn[data-category="exhibits"]');
+            if (exhibitsBtn) {
+                exhibitsBtn.click();
+                // Scroll to terrain section
+                setTimeout(() => {
+                    const terrainSection = document.querySelector('.build-card[data-type="terrain"]');
+                    if (terrainSection) {
+                        terrainSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 100);
+            }
+        });
+    }
+
+    handleBuildingClick(gridX, gridY) {
+        const tile = this.grid.getTile(gridX, gridY);
+        if (tile && tile.building && tile.building.type === 'research') {
+            this.minigameUI.showResearchOptions();
         }
     }
 
@@ -160,12 +346,18 @@ class Game {
             color = 0xe74c3c;
         } else if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'fence') {
             color = 0x27ae60;
+        } else if (this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'path') {
+            color = 0x8B7355;
         }
         this.renderer3d.highlightTile(intersection.x, intersection.y, color);
 
-        // Update fence preview pendant le drag
-        if (this.isDragging && this.ui.selectedBuildMode && this.ui.selectedBuildMode.type === 'fence') {
-            this.fenceBuilder.updateDrawing(intersection.x, intersection.y);
+        // Update previews pendant le drag
+        if (this.isDragging && this.ui.selectedBuildMode) {
+            if (this.ui.selectedBuildMode.type === 'fence') {
+                this.fenceBuilder.updateDrawing(intersection.x, intersection.y);
+            } else if (this.ui.selectedBuildMode.type === 'path') {
+                this.pathBuilder.updateDrawing(intersection.x, intersection.y);
+            }
         }
     }
 
@@ -175,22 +367,37 @@ class Game {
             return;
         }
 
-        if (this.isDragging && this.currentMousePos) {
-            const result = this.fenceBuilder.finishDrawing(
-                this.currentMousePos.x,
-                this.currentMousePos.y,
-                this.zoo
-            );
-
-            if (result && result.success) {
-                this.ui.updateStats();
-                this.notifications.success(
-                    'Exhibit Built!',
-                    `Cost: $${result.cost.toLocaleString()}`,
-                    '🏗️'
+        if (this.isDragging && this.ui.selectedBuildMode) {
+            if (this.ui.selectedBuildMode.type === 'fence' && this.currentMousePos) {
+                const result = this.fenceBuilder.finishDrawing(
+                    this.currentMousePos.x,
+                    this.currentMousePos.y,
+                    this.zoo
                 );
-            } else if (result) {
-                this.notifications.error('Build Failed', result.message);
+
+                if (result && result.success) {
+                    this.ui.updateStats();
+                    this.notifications.success(
+                        'Exhibit Built!',
+                        `Cost: $${result.cost.toLocaleString()}`,
+                        '🏗️'
+                    );
+                } else if (result) {
+                    this.notifications.error('Build Failed', result.message);
+                }
+            } else if (this.ui.selectedBuildMode.type === 'path') {
+                const result = this.pathBuilder.finishDrawing(this.zoo);
+
+                if (result && result.success) {
+                    this.ui.updateStats();
+                    this.notifications.success(
+                        'Path Built!',
+                        `${result.count} tiles - $${result.cost.toLocaleString()}`,
+                        '🛤️'
+                    );
+                } else if (result) {
+                    this.notifications.error('Build Failed', result.message);
+                }
             }
 
             this.isDragging = false;
@@ -201,35 +408,8 @@ class Game {
         const mode = this.ui.selectedBuildMode;
 
         if (mode.type === 'path') {
-            const cost = PathCosts[mode.material] || 10;
-            if (this.zoo.spend(cost)) {
-                this.grid.placePath(gridX, gridY, mode.material);
-                this.renderer3d.addPath(gridX, gridY, mode.material);
-                this.ui.updateStats();
-            } else {
-                this.notifications.error('Not Enough Money', `Need $${cost}`);
-            }
-        } else if (mode.type === 'entrance') {
-            if (this.zoo.entrance) {
-                this.notifications.warning('Already Built', 'Entrance already exists!');
-                return;
-            }
-
-            const entranceCost = 5000;
-            if (this.zoo.spend(entranceCost)) {
-                const entrance = new ParkEntrance(gridX, gridY);
-                this.zoo.entrance = entrance;
-
-                const mesh = entrance.create3DMesh(this.grid.width, this.grid.height);
-                mesh.userData.entrance = entrance;
-                this.renderer3d.getScene().add(mesh);
-
-                this.ui.updateEntranceUI();
-                this.ui.updateStats();
-                this.notifications.success('Park Entrance Built!', 'Visitors can now enter your zoo', '🎪');
-            } else {
-                this.notifications.error('Not Enough Money', `Need $${entranceCost.toLocaleString()}`);
-            }
+            // Les chemins utilisent maintenant le drag - ignorer le simple clic
+            return;
         } else if (mode.type === 'facility') {
             const spec = BuildingTypes[mode.building];
             if (this.zoo.spend(spec.cost)) {
@@ -261,7 +441,9 @@ class Game {
                 this.notifications.error('Not Enough Money', `Need $${spec.cost.toLocaleString()}`);
             }
         } else if (mode.type === 'animal') {
-            const spec = AnimalSpecies[mode.animal];
+            const spec = AnimalSpecies[mode.animal] || RareAnimals[mode.animal];
+            if (!spec) return;
+
             if (this.zoo.spend(spec.cost)) {
                 const tile = this.grid.getTile(gridX, gridY);
                 if (tile && tile.exhibit) {
@@ -310,6 +492,7 @@ class Game {
         this.camera3d.update();
         this.zoo.update();
         this.visitorManager.update();
+        this.terrainManager.updateWaterAnimation();
         this.ui.updateStats();
 
         // Update animal meshes
@@ -392,7 +575,7 @@ class Game {
 
 // Start game
 window.addEventListener('load', () => {
-    const game = new Game();
+    window.game = new Game();
     console.log('🎮 Zoo Tycoon 3D Ultimate loaded!');
     console.log('📖 Drag to build exhibits, click to place objects');
 });

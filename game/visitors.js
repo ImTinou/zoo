@@ -21,6 +21,11 @@ class Visitor {
         this.visitedExhibits = new Set();
         this.ticketPaid = 0;
 
+        // Satisfaction (0-5 étoiles) - calculée à la sortie
+        this.satisfaction = 0;
+        this.timeInZoo = 0; // Frames passés dans le zoo
+        this.readyToLeave = false;
+
         // Apparence
         this.color = this.randomVisitorColor();
     }
@@ -34,6 +39,8 @@ class Visitor {
     }
 
     update(grid, zoo) {
+        this.timeInZoo++;
+
         // Décrémenter les besoins
         this.hunger = Math.max(0, this.hunger - 0.05);
         this.thirst = Math.max(0, this.thirst - 0.08);
@@ -42,6 +49,11 @@ class Visitor {
 
         // Update happiness basé sur les besoins
         this.updateHappiness();
+
+        // Décider de partir après un certain temps ou si malheureux
+        if (this.timeInZoo > 3600 || this.happiness < 20 || this.energy < 10) {
+            this.readyToLeave = true;
+        }
 
         // Si pas de chemin, en trouver un nouveau
         if (this.path.length === 0 && Math.random() < 0.01) {
@@ -257,6 +269,28 @@ class Visitor {
         return path;
     }
 
+    calculateSatisfaction() {
+        // Calculer la satisfaction finale (0-5 étoiles)
+        let score = 0;
+
+        // Bonheur général (0-2 étoiles)
+        if (this.happiness >= 80) score += 2;
+        else if (this.happiness >= 60) score += 1.5;
+        else if (this.happiness >= 40) score += 1;
+        else if (this.happiness >= 20) score += 0.5;
+
+        // Enclos visités (0-2 étoiles)
+        const exhibitsScore = Math.min(2, this.visitedExhibits.size * 0.4);
+        score += exhibitsScore;
+
+        // Besoins satisfaits (0-1 étoile)
+        const needsScore = (this.hunger + this.thirst + this.bladder) / 300;
+        score += needsScore;
+
+        this.satisfaction = Math.max(0, Math.min(5, Math.round(score * 10) / 10));
+        return this.satisfaction;
+    }
+
     getInfo() {
         return {
             hunger: Math.floor(this.hunger),
@@ -265,7 +299,9 @@ class Visitor {
             happiness: Math.floor(this.happiness),
             energy: Math.floor(this.energy),
             thought: this.currentThought,
-            exhibitsVisited: this.visitedExhibits.size
+            exhibitsVisited: this.visitedExhibits.size,
+            satisfaction: this.satisfaction,
+            timeInZoo: Math.floor(this.timeInZoo / 60)
         };
     }
 }
@@ -279,6 +315,10 @@ class VisitorManager {
         this.spawnRate = 60; // frames entre chaque spawn
         this.spawnCounter = 0;
         this.maxVisitors = 100;
+
+        // Statistiques de satisfaction
+        this.satisfactionHistory = []; // Historique des dernières 100 satisfactions
+        this.averageSatisfaction = 0;
     }
 
     update() {
@@ -290,17 +330,40 @@ class VisitorManager {
         }
 
         // Update visiteurs existants
-        this.visitors.forEach((visitor, index) => {
+        for (let i = this.visitors.length - 1; i >= 0; i--) {
+            const visitor = this.visitors[i];
             visitor.update(this.grid, this.zoo);
 
-            // Retirer les visiteurs très malheureux ou qui ont tout vu
-            if (visitor.happiness < 10 || visitor.energy < 5) {
-                this.visitors.splice(index, 1);
+            // Retirer les visiteurs prêts à partir
+            if (visitor.readyToLeave || visitor.happiness < 10 || visitor.energy < 5) {
+                const satisfaction = visitor.calculateSatisfaction();
+                this.recordSatisfaction(satisfaction);
+                this.visitors.splice(i, 1);
             }
-        });
+        }
 
         // Update guest count du zoo
         this.zoo.guestCount = this.visitors.length;
+
+        // Calculer la satisfaction moyenne
+        this.calculateAverageSatisfaction();
+    }
+
+    recordSatisfaction(satisfaction) {
+        this.satisfactionHistory.push(satisfaction);
+        // Garder seulement les 100 dernières
+        if (this.satisfactionHistory.length > 100) {
+            this.satisfactionHistory.shift();
+        }
+    }
+
+    calculateAverageSatisfaction() {
+        if (this.satisfactionHistory.length === 0) {
+            this.averageSatisfaction = 0;
+            return;
+        }
+        const sum = this.satisfactionHistory.reduce((acc, val) => acc + val, 0);
+        this.averageSatisfaction = sum / this.satisfactionHistory.length;
     }
 
     spawnVisitor() {

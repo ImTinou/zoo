@@ -6,8 +6,13 @@ class Animal {
         this.y = y;
         this.name = this.generateName();
 
-        // Stats de l'animal
-        const specs = AnimalSpecies[species];
+        // Stats de l'animal - supporter les animaux normaux ET rares
+        const specs = AnimalSpecies[species] || RareAnimals[species];
+        if (!specs) {
+            console.error(`Unknown species: ${species}`);
+            return;
+        }
+
         this.happiness = 50;
         this.health = 100;
         this.hunger = 50;
@@ -436,6 +441,7 @@ const AnimalSpecies = {
 // Exhibit (Enclos)
 class Exhibit {
     constructor(x, y, width, height) {
+        this.id = `exhibit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         this.x = x;
         this.y = y;
         this.width = width;
