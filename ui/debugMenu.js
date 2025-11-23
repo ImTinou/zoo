@@ -24,7 +24,13 @@ class DebugMenu {
 
                 // Vérifier si le code secret est dans le buffer
                 if (this.inputBuffer.includes(this.secretCode)) {
-                    this.unlockDebugMenu();
+                    if (!this.isUnlocked) {
+                        this.unlockDebugMenu();
+                    }
+                    // Ouvrir le menu directement
+                    if (!this.isVisible) {
+                        this.toggleDebugMenu();
+                    }
                     this.inputBuffer = ''; // Reset le buffer
                 }
             }
