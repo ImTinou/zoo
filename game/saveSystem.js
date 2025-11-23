@@ -35,6 +35,17 @@ class SaveSystem {
                     height: game.grid.height,
                     tiles: this.serializeGrid(game.grid)
                 },
+                exhibits: game.zoo.exhibits.map(exhibit => ({
+                    x: exhibit.x,
+                    y: exhibit.y,
+                    width: exhibit.width,
+                    height: exhibit.height,
+                    id: exhibit.id,
+                    fenceType: exhibit.fenceType,
+                    terrain: exhibit.terrain,
+                    hasShelter: exhibit.hasShelter,
+                    hasWater: exhibit.hasWater
+                })),
                 animals: game.zoo.animals.map(animal => ({
                     species: animal.species,
                     x: animal.x,
@@ -43,7 +54,8 @@ class SaveSystem {
                     happiness: animal.happiness,
                     health: animal.health,
                     hunger: animal.hunger,
-                    age: animal.age
+                    age: animal.age,
+                    exhibitId: animal.exhibit ? animal.exhibit.id : null
                 })),
                 buildings: game.zoo.buildings.map(building => ({
                     type: building.type,
@@ -125,6 +137,23 @@ class SaveSystem {
     }
 
     applyLoadedData(game, saveData) {
+        // Clear existing data
+        game.zoo.animals = [];
+        game.zoo.exhibits = [];
+        game.zoo.buildings = [];
+        game.animalMeshes = [];
+        game.enrichmentMeshes = [];
+
+        // Clear scene meshes (animals, enrichments, etc.)
+        const scene = game.renderer3d.getScene();
+        const objectsToRemove = [];
+        scene.children.forEach(child => {
+            if (child.userData && (child.userData.animal || child.userData.enrichment || child.userData.fence || child.userData.exhibit)) {
+                objectsToRemove.push(child);
+            }
+        });
+        objectsToRemove.forEach(obj => scene.remove(obj));
+
         // Restore zoo data
         game.zoo.money = saveData.zoo.money;
         game.zoo.date = saveData.zoo.date;
@@ -146,6 +175,63 @@ class SaveSystem {
                 game.renderer3d.addPath(tileData.x, tileData.y, tileData.path.material);
             }
         });
+
+        // Restore exhibits first
+        const exhibitMap = new Map(); // id -> exhibit
+        if (saveData.exhibits) {
+            saveData.exhibits.forEach(exhibitData => {
+                const exhibit = new Exhibit(
+                    exhibitData.x,
+                    exhibitData.y,
+                    exhibitData.width,
+                    exhibitData.height
+                );
+                exhibit.id = exhibitData.id;
+                exhibit.fenceType = exhibitData.fenceType;
+                exhibit.terrain = exhibitData.terrain || 'grass';
+                exhibit.hasShelter = exhibitData.hasShelter || false;
+                exhibit.hasWater = exhibitData.hasWater || false;
+
+                // Rebuild fences
+                const spec = game.fenceBuilder.getFenceTypes()[exhibitData.fenceType];
+                const minX = exhibitData.x;
+                const maxX = exhibitData.x + exhibitData.width - 1;
+                const minY = exhibitData.y;
+                const maxY = exhibitData.y + exhibitData.height - 1;
+
+                // Horizontal fences
+                for (let x = minX; x <= maxX; x++) {
+                    game.fenceBuilder.placeFence(x, minY, 'horizontal', spec, exhibit);
+                    if (minY !== maxY) {
+                        game.fenceBuilder.placeFence(x, maxY, 'horizontal', spec, exhibit);
+                    }
+                }
+
+                // Vertical fences
+                for (let y = minY + 1; y < maxY; y++) {
+                    game.fenceBuilder.placeFence(minX, y, 'vertical', spec, exhibit);
+                    if (minX !== maxX) {
+                        game.fenceBuilder.placeFence(maxX, y, 'vertical', spec, exhibit);
+                    }
+                }
+
+                // Mark tiles as part of exhibit
+                for (let y = minY; y <= maxY; y++) {
+                    for (let x = minX; x <= maxX; x++) {
+                        const tile = game.grid.getTile(x, y);
+                        if (tile) {
+                            tile.exhibit = exhibit;
+                        }
+                    }
+                }
+
+                // Apply terrain
+                game.terrainManager.applyTerrainToExhibit(exhibit, exhibit.terrain);
+
+                game.zoo.exhibits.push(exhibit);
+                exhibitMap.set(exhibit.id, exhibit);
+            });
+        }
 
         // Restore buildings
         saveData.buildings.forEach(buildingData => {
@@ -178,6 +264,12 @@ class SaveSystem {
             animal.health = animalData.health;
             animal.hunger = animalData.hunger;
             animal.age = animalData.age;
+
+            // Restore exhibit assignment
+            if (animalData.exhibitId && exhibitMap.has(animalData.exhibitId)) {
+                const exhibit = exhibitMap.get(animalData.exhibitId);
+                exhibit.addAnimal(animal);
+            }
 
             game.zoo.addAnimal(animal);
 

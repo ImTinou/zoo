@@ -16,6 +16,7 @@ class Game {
         this.visitorManager = new VisitorManager(this.zoo, this.grid);
         this.saveSystem = new SaveSystem();
         this.minigameUI = new MinigameUI(this.zoo);
+        this.debugMenu = new DebugMenu(this);
 
         this.currentMousePos = null;
         this.isDragging = false;
@@ -195,10 +196,58 @@ class Game {
         } else if (this.ui.selectedBuildMode) {
             this.handleBuild(gridX, gridY);
         } else {
-            // Vérifier si on clique sur un bâtiment (centre de recherche) ou un enclos
-            this.handleBuildingClick(gridX, gridY);
-            this.handleExhibitClick(gridX, gridY);
+            // Mode inspection - vérifier tous les objets cliquables
+            this.handleInspectClick(gridX, gridY);
         }
+    }
+
+    handleInspectClick(gridX, gridY) {
+        const tile = this.grid.getTile(gridX, gridY);
+
+        // Priorité 1: Visiteur à cette position
+        const visitor = this.visitorManager.visitors.find(v =>
+            Math.floor(v.x) === gridX && Math.floor(v.y) === gridY
+        );
+        if (visitor) {
+            this.showVisitorInfo(visitor);
+            return;
+        }
+
+        // Priorité 2: Animal à cette position
+        const animal = this.zoo.animals.find(a =>
+            Math.floor(a.x) === gridX && Math.floor(a.y) === gridY
+        );
+        if (animal) {
+            this.showAnimalInfo(animal);
+            return;
+        }
+
+        // Priorité 3: Bâtiment
+        if (tile && tile.building) {
+            this.showBuildingInfo(tile.building);
+            // Si c'est un centre de recherche, ouvrir l'interface
+            if (tile.building.type === 'research') {
+                this.minigameUI.showResearchOptions();
+            }
+            return;
+        }
+
+        // Priorité 4: Enclos
+        if (tile && tile.exhibit) {
+            this.showExhibitInfo(tile.exhibit);
+            return;
+        }
+
+        // Aucun objet cliqué - réinitialiser l'info panel
+        this.resetInfoPanel();
+    }
+
+    resetInfoPanel() {
+        const selectionInfo = document.getElementById('selectionInfo');
+        selectionInfo.innerHTML = `
+            <h3>🎯 Selection</h3>
+            <p style="color: #8e8ea0; font-size: 12px;">Click to select an object</p>
+        `;
     }
 
     handleTerrainChange(gridX, gridY) {
@@ -224,10 +273,136 @@ class Game {
         }
     }
 
-    handleExhibitClick(gridX, gridY) {
-        const tile = this.grid.getTile(gridX, gridY);
-        if (tile && tile.exhibit) {
-            this.showExhibitInfo(tile.exhibit);
+    showVisitorInfo(visitor) {
+        const selectionInfo = document.getElementById('selectionInfo');
+        const info = visitor.getInfo();
+
+        const happinessColor = info.happiness >= 80 ? '#30d158' : info.happiness >= 50 ? '#ffd60a' : '#ff453a';
+
+        selectionInfo.innerHTML = `
+            <h3>🧑‍🤝‍🧑 Visitor Info</h3>
+            <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Happiness:</span>
+                    <span style="color: ${happinessColor}; font-size: 12px; font-weight: 600;">${info.happiness}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Hunger:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.hunger}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Thirst:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.thirst}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Bladder:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.bladder}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Energy:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.energy}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Time in Zoo:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.timeInZoo} min</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Exhibits Visited:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${info.exhibitsVisited}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Ticket Paid:</span>
+                    <span style="color: #30d158; font-size: 12px; font-weight: 600;">$${visitor.ticketPaid}</span>
+                </div>
+                ${info.thought ? `
+                    <div style="margin-top: 12px; padding: 10px; background: #2c2c2e; border-radius: 8px;">
+                        <span style="color: #fff; font-size: 11px;">${info.thought}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    showAnimalInfo(animal) {
+        const selectionInfo = document.getElementById('selectionInfo');
+        const spec = AnimalSpecies[animal.species] || RareAnimals[animal.species];
+        const happinessColor = animal.happiness >= 80 ? '#30d158' : animal.happiness >= 50 ? '#ffd60a' : '#ff453a';
+
+        selectionInfo.innerHTML = `
+            <h3>${spec.emoji} ${spec.name}</h3>
+            <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Species:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${spec.name}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Biome:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${spec.biome}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Happiness:</span>
+                    <span style="color: ${happinessColor}; font-size: 12px; font-weight: 600;">${Math.round(animal.happiness)}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Hunger:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${Math.round(animal.hunger)}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Age:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${Math.floor(animal.age / 60)} days</span>
+                </div>
+                ${animal.exhibit ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #8e8ea0; font-size: 12px;">Exhibit Size:</span>
+                        <span style="color: #fff; font-size: 12px; font-weight: 600;">${animal.exhibit.width}x${animal.exhibit.height}</span>
+                    </div>
+                ` : ''}
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #3a3a3c;">
+                    <h4 style="color: #fff; font-size: 12px; margin-bottom: 8px;">Needs:</h4>
+                    <div style="font-size: 11px; color: #8e8ea0; line-height: 1.5;">
+                        ${spec.needs.join(', ')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    showBuildingInfo(building) {
+        const selectionInfo = document.getElementById('selectionInfo');
+
+        selectionInfo.innerHTML = `
+            <h3>${building.emoji} ${building.name}</h3>
+            <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Type:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">${building.name}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Position:</span>
+                    <span style="color: #fff; font-size: 12px; font-weight: 600;">(${building.x}, ${building.y})</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Cost:</span>
+                    <span style="color: #ffd60a; font-size: 12px; font-weight: 600;">$${building.cost.toLocaleString()}</span>
+                </div>
+                ${building.type === 'research' ? `
+                    <div style="margin-top: 12px;">
+                        <button id="openResearchBtn" class="btn" style="width: 100%; padding: 8px; background: #30d158;">
+                            🔬 Open Research Center
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Add click handler for research button
+        if (building.type === 'research') {
+            const btn = document.getElementById('openResearchBtn');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    this.minigameUI.showResearchOptions();
+                });
+            }
         }
     }
 
@@ -311,13 +486,6 @@ class Game {
                 }, 100);
             }
         });
-    }
-
-    handleBuildingClick(gridX, gridY) {
-        const tile = this.grid.getTile(gridX, gridY);
-        if (tile && tile.building && tile.building.type === 'research') {
-            this.minigameUI.showResearchOptions();
-        }
     }
 
     onMouseMove(e) {
