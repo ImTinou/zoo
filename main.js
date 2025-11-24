@@ -1,3 +1,8 @@
+// Firebase imports
+import firebaseService from './firebase/config.js';
+import AuthUI from './ui/auth.js';
+import SocialUI from './ui/social.js';
+
 // Zoo Tycoon 3D Ultimate - Main Game
 class Game {
     constructor() {
@@ -17,6 +22,12 @@ class Game {
         this.saveSystem = new SaveSystem();
         this.minigameUI = new MinigameUI(this.zoo);
         this.debugMenu = new DebugMenu(this);
+
+        // Firebase & Social Features
+        this.firebaseService = firebaseService;
+        this.authUI = new AuthUI();
+        this.socialUI = new SocialUI(this);
+        this.saveSystem.setFirebaseService(firebaseService);
 
         this.currentMousePos = null;
         this.isDragging = false;

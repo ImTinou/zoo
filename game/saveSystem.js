@@ -1,14 +1,21 @@
-// Save System - LocalStorage
+// Save System - Firebase + LocalStorage Fallback
 class SaveSystem {
     constructor() {
         this.saveKey = 'zooTycoon3D_save';
         this.autoSaveInterval = 30000; // Sauvegarde auto toutes les 30 secondes
         this.autoSaveTimer = null;
+        this.firebaseService = null;
+        this.useFirebase = false;
+    }
+
+    setFirebaseService(firebaseService) {
+        this.firebaseService = firebaseService;
+        this.useFirebase = true;
     }
 
     startAutoSave(game) {
-        this.autoSaveTimer = setInterval(() => {
-            this.saveGame(game);
+        this.autoSaveTimer = setInterval(async () => {
+            await this.saveGame(game);
             console.log('🔄 Auto-save completed');
         }, this.autoSaveInterval);
     }
@@ -19,7 +26,7 @@ class SaveSystem {
         }
     }
 
-    saveGame(game) {
+    async saveGame(game, isPublic = false) {
         try {
             const saveData = {
                 version: '1.0',
@@ -79,7 +86,14 @@ class SaveSystem {
                 unlockedAnimals: game.zoo.unlockedAnimals || []
             };
 
+            // Save to localStorage as fallback
             localStorage.setItem(this.saveKey, JSON.stringify(saveData));
+
+            // Save to Firebase if authenticated
+            if (this.useFirebase && this.firebaseService && this.firebaseService.isAuthenticated()) {
+                await this.firebaseService.saveZoo(saveData, isPublic);
+            }
+
             return true;
         } catch (error) {
             console.error('Failed to save game:', error);
