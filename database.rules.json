@@ -1,0 +1,150 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId",
+        ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt'])",
+
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val() === auth.token.email"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "friends": {
+          ".validate": "newData.hasChildren()",
+          "$friendId": {
+            ".validate": "newData.isString()"
+          }
+        },
+        "publicZoos": {
+          ".validate": "newData.hasChildren()",
+          "$zooId": {
+            ".validate": "newData.isString()"
+          }
+        }
+      }
+    },
+
+    "zoos": {
+      "$userId": {
+        ".read": "auth != null && (data.child('isPublic').val() === true || auth.uid === $userId)",
+        ".write": "auth != null && auth.uid === $userId",
+        ".validate": "newData.hasChildren(['userId', 'userName', 'isPublic', 'lastUpdated', 'version', 'timestamp'])",
+
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "userName": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "isPublic": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastUpdated": {
+          ".validate": "newData.isString()"
+        },
+        "version": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "zoo": {
+          ".validate": "newData.hasChildren(['money', 'date', 'zooRating', 'guestCount'])",
+          "money": {
+            ".validate": "newData.isNumber()"
+          },
+          "date": {
+            ".validate": "newData.hasChildren(['month', 'year'])"
+          },
+          "zooRating": {
+            ".validate": "newData.isNumber()"
+          },
+          "guestCount": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+        "grid": {
+          ".validate": "newData.hasChildren(['width', 'height', 'tiles'])"
+        },
+        "exhibits": {
+          "$exhibitIndex": {
+            ".validate": "newData.hasChildren()"
+          }
+        },
+        "animals": {
+          "$animalIndex": {
+            ".validate": "newData.hasChildren()"
+          }
+        },
+        "buildings": {
+          "$buildingIndex": {
+            ".validate": "newData.hasChildren()"
+          }
+        },
+        "entrance": {
+          ".validate": "newData.hasChildren()"
+        },
+        "expansion": {
+          ".validate": "newData.hasChildren(['currentSize'])"
+        },
+        "satisfaction": {
+          ".validate": "newData.hasChildren(['history', 'average'])"
+        },
+        "unlockedAnimals": {
+          "$animalIndex": {
+            ".validate": "newData.isString()"
+          }
+        }
+      }
+    },
+
+    "stats": {
+      ".read": "auth != null",
+      "$statId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren()"
+      }
+    },
+
+    "comments": {
+      "$commentId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('userId').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['userId', 'zooId', 'text', 'timestamp'])",
+
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "zooId": {
+          ".validate": "newData.isString()"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    "achievements": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId",
+        ".validate": "newData.hasChildren()"
+      }
+    }
+  }
+}
