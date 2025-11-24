@@ -1,16 +1,13 @@
-// Save System - Firebase + LocalStorage Fallback
+// Save System - Firebase Cloud Only
 class SaveSystem {
     constructor() {
-        this.saveKey = 'zooTycoon3D_save';
         this.autoSaveInterval = 30000; // Sauvegarde auto toutes les 30 secondes
         this.autoSaveTimer = null;
         this.firebaseService = null;
-        this.useFirebase = false;
     }
 
     setFirebaseService(firebaseService) {
         this.firebaseService = firebaseService;
-        this.useFirebase = true;
     }
 
     startAutoSave(game) {
@@ -27,6 +24,12 @@ class SaveSystem {
     }
 
     async saveGame(game, isPublic = false) {
+        // Require authentication
+        if (!this.firebaseService || !this.firebaseService.isAuthenticated()) {
+            console.warn('⚠️ Cannot save: User not authenticated');
+            return false;
+        }
+
         try {
             const saveData = {
                 version: '1.0',
@@ -86,17 +89,11 @@ class SaveSystem {
                 unlockedAnimals: game.zoo.unlockedAnimals || []
             };
 
-            // Save to localStorage as fallback
-            localStorage.setItem(this.saveKey, JSON.stringify(saveData));
-
-            // Save to Firebase if authenticated
-            if (this.useFirebase && this.firebaseService && this.firebaseService.isAuthenticated()) {
-                await this.firebaseService.saveZoo(saveData, isPublic);
-            }
-
+            // Save to Firebase only
+            await this.firebaseService.saveZoo(saveData, isPublic);
             return true;
         } catch (error) {
-            console.error('Failed to save game:', error);
+            console.error('❌ Failed to save game:', error);
             return false;
         }
     }
@@ -127,27 +124,50 @@ class SaveSystem {
         return tiles;
     }
 
-    loadGame() {
+    async loadGame() {
+        // Require authentication
+        if (!this.firebaseService || !this.firebaseService.isAuthenticated()) {
+            console.warn('⚠️ Cannot load: User not authenticated');
+            return null;
+        }
+
         try {
-            const saveDataString = localStorage.getItem(this.saveKey);
-            if (!saveDataString) {
+            const result = await this.firebaseService.loadZoo();
+
+            if (result.success) {
+                return result.data;
+            } else {
+                console.log('ℹ️ No saved game found');
                 return null;
             }
-
-            const saveData = JSON.parse(saveDataString);
-            return saveData;
         } catch (error) {
-            console.error('Failed to load game:', error);
+            console.error('❌ Failed to load game:', error);
             return null;
         }
     }
 
-    hasSave() {
-        return localStorage.getItem(this.saveKey) !== null;
+    async hasSave() {
+        if (!this.firebaseService || !this.firebaseService.isAuthenticated()) {
+            return false;
+        }
+
+        const data = await this.loadGame();
+        return data !== null;
     }
 
-    deleteSave() {
-        localStorage.removeItem(this.saveKey);
+    async deleteSave() {
+        if (!this.firebaseService || !this.firebaseService.isAuthenticated()) {
+            console.warn('⚠️ Cannot delete: User not authenticated');
+            return false;
+        }
+
+        try {
+            const result = await this.firebaseService.deleteZoo();
+            return result.success;
+        } catch (error) {
+            console.error('❌ Failed to delete save:', error);
+            return false;
+        }
     }
 
     applyLoadedData(game, saveData) {

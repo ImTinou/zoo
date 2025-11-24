@@ -42,34 +42,16 @@ class Game {
         this.setupMinimapHandler();
         this.setupSaveControls();
 
-        // Charger la sauvegarde si elle existe
-        if (this.saveSystem.hasSave()) {
-            const saveData = this.saveSystem.loadGame();
-            if (saveData) {
-                this.saveSystem.applyLoadedData(this, saveData);
-                this.notifications.success('Game Loaded!', 'Your zoo has been restored', '💾');
-            } else {
-                this.createDefaultEntrance();
-            }
-        } else {
-            this.createDefaultEntrance();
-        }
+        // Always start with default entrance
+        // The zoo will be loaded from Firebase after authentication
+        this.createDefaultEntrance();
 
-        // Démarrer l'auto-save
+        // Start auto-save (will only save when authenticated)
         this.saveSystem.startAutoSave(this);
 
         // Initialize UI
         this.ui.updateEntranceUI();
         this.ui.updateExpansionUI();
-
-        // Welcome notification
-        if (!this.saveSystem.hasSave()) {
-            this.notifications.success(
-                'Welcome to Zoo Tycoon 3D!',
-                'Build exhibits, add animals, and create the best zoo!',
-                '🎉'
-            );
-        }
 
         this.gameLoop();
     }
@@ -139,11 +121,21 @@ class Game {
 
     setupSaveControls() {
         // Sauvegarder avec Ctrl+S
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', async (e) => {
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
-                this.saveSystem.saveGame(this);
-                this.notifications.success('Game Saved!', 'Your progress has been saved', '💾');
+
+                if (!this.firebaseService.isAuthenticated()) {
+                    this.notifications.warning('Not logged in', 'Please login to save your zoo', '⚠️');
+                    return;
+                }
+
+                const success = await this.saveSystem.saveGame(this);
+                if (success) {
+                    this.notifications.success('Game Saved!', 'Your progress has been saved to cloud', '💾');
+                } else {
+                    this.notifications.error('Save Failed', 'Could not save to cloud', '❌');
+                }
             }
         });
     }

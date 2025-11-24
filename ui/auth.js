@@ -4,6 +4,8 @@ import firebaseService from '../firebase/config.js';
 class AuthUI {
     constructor() {
         this.currentUser = null;
+        this.isInitialLoad = true;
+        this.createWelcomeScreen();
         this.createAuthModal();
         this.createUserMenu();
         this.setupAuthListeners();
@@ -12,7 +14,55 @@ class AuthUI {
         firebaseService.onAuthStateChange((user) => {
             this.currentUser = user;
             this.updateUI();
+
+            // Force login on first load if not authenticated
+            if (this.isInitialLoad) {
+                this.isInitialLoad = false;
+                if (!user) {
+                    // Wait a bit to ensure the page is fully loaded
+                    setTimeout(() => {
+                        this.showAuthModal();
+                    }, 500);
+                } else {
+                    // User is already logged in, load their zoo
+                    this.autoLoadZoo();
+                }
+            }
         });
+    }
+
+    createWelcomeScreen() {
+        const welcomeScreen = document.createElement('div');
+        welcomeScreen.id = 'welcomeScreen';
+        welcomeScreen.className = 'welcome-screen';
+        welcomeScreen.innerHTML = `
+            <div class="welcome-content">
+                <div class="welcome-logo">🦁</div>
+                <h1>Zoo Tycoon 3D</h1>
+                <p class="welcome-tagline">Build. Manage. Share.</p>
+                <p class="welcome-description">
+                    Create your dream zoo and share it with players around the world!
+                </p>
+                <div class="welcome-features">
+                    <div class="feature">
+                        <span class="feature-icon">☁️</span>
+                        <span>Cloud Saves</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">👥</span>
+                        <span>Social Features</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🌍</span>
+                        <span>Visit Other Zoos</span>
+                    </div>
+                </div>
+                <div id="welcomeMessage" class="welcome-message">
+                    Please login or create an account to continue
+                </div>
+            </div>
+        `;
+        document.body.appendChild(welcomeScreen);
     }
 
     createAuthModal() {
@@ -301,8 +351,14 @@ class AuthUI {
     }
 
     updateUI() {
+        const welcomeScreen = document.getElementById('welcomeScreen');
+
         if (this.currentUser) {
-            // User logged in
+            // User logged in - hide welcome screen
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+            }
+
             document.getElementById('notLoggedIn').style.display = 'none';
             document.getElementById('loggedIn').style.display = 'block';
 
@@ -311,7 +367,11 @@ class AuthUI {
             document.getElementById('dropdownUserName').textContent = displayName;
             document.getElementById('dropdownUserEmail').textContent = this.currentUser.email;
         } else {
-            // User not logged in
+            // User not logged in - show welcome screen
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'flex';
+            }
+
             document.getElementById('notLoggedIn').style.display = 'block';
             document.getElementById('loggedIn').style.display = 'none';
             document.getElementById('userDropdown').style.display = 'none';
@@ -344,6 +404,25 @@ class AuthUI {
             if (window.game && window.game.notifications) {
                 window.game.notifications.info('No saved zoo', 'Start building your zoo!', '🏗️');
             }
+        }
+    }
+
+    async autoLoadZoo() {
+        if (!firebaseService.isAuthenticated() || !window.game) {
+            return;
+        }
+
+        // Silently try to load the zoo
+        const result = await firebaseService.loadZoo();
+
+        if (result.success) {
+            window.game.saveSystem.applyLoadedData(window.game, result.data);
+            if (window.game.notifications) {
+                window.game.notifications.success('Welcome back!', 'Your zoo has been loaded', '👋');
+            }
+        } else {
+            // No saved zoo, that's ok - they can start fresh
+            console.log('ℹ️ No saved zoo found, starting fresh');
         }
     }
 }
