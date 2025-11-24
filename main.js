@@ -2,6 +2,7 @@
 import firebaseService from './firebase/config.js';
 import AuthUI from './ui/auth.js';
 import SocialUI from './ui/social.js';
+import SaveStatusUI from './ui/saveStatus.js';
 
 // Zoo Tycoon 3D Ultimate - Main Game
 class Game {
@@ -27,7 +28,9 @@ class Game {
         this.firebaseService = firebaseService;
         this.authUI = new AuthUI();
         this.socialUI = new SocialUI(this);
+        this.saveStatusUI = new SaveStatusUI();
         this.saveSystem.setFirebaseService(firebaseService);
+        this.saveSystem.setSaveStatusUI(this.saveStatusUI);
 
         this.currentMousePos = null;
         this.isDragging = false;

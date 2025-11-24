@@ -65,6 +65,19 @@ class AuthUI {
         document.body.appendChild(welcomeScreen);
     }
 
+    showLoadingScreen(message = 'Loading...') {
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        if (welcomeScreen) {
+            welcomeScreen.innerHTML = `
+                <div class="welcome-content">
+                    <div class="loading-spinner"></div>
+                    <h2 style="color: #fff; margin-top: 30px;">${message}</h2>
+                </div>
+            `;
+            welcomeScreen.style.display = 'flex';
+        }
+    }
+
     createAuthModal() {
         const modal = document.createElement('div');
         modal.id = 'authModal';
@@ -160,9 +173,26 @@ class AuthUI {
     }
 
     setupAuthListeners() {
-        // Modal close
+        // Modal close - only if authenticated
         document.getElementById('closeAuthModal').addEventListener('click', () => {
-            this.closeAuthModal();
+            if (firebaseService.isAuthenticated()) {
+                this.closeAuthModal();
+            } else {
+                // Shake the modal to indicate it can't be closed
+                const modal = document.querySelector('.auth-modal');
+                modal.classList.add('shake');
+                setTimeout(() => modal.classList.remove('shake'), 500);
+
+                // Show message
+                const loginError = document.getElementById('loginError');
+                const registerError = document.getElementById('registerError');
+                const errorMsg = 'You must login to continue';
+                if (document.getElementById('loginForm').style.display !== 'none') {
+                    loginError.textContent = errorMsg;
+                } else {
+                    registerError.textContent = errorMsg;
+                }
+            }
         });
 
         // Tab switching
@@ -232,9 +262,9 @@ class AuthUI {
             this.loadMyZoo();
         });
 
-        // Close modal on outside click
+        // Close modal on outside click - only if authenticated
         document.getElementById('authModal').addEventListener('click', (e) => {
-            if (e.target.id === 'authModal') {
+            if (e.target.id === 'authModal' && firebaseService.isAuthenticated()) {
                 this.closeAuthModal();
             }
         });
@@ -412,17 +442,33 @@ class AuthUI {
             return;
         }
 
-        // Silently try to load the zoo
-        const result = await firebaseService.loadZoo();
+        // Show loading screen
+        this.showLoadingScreen('Loading your zoo...');
 
-        if (result.success) {
-            window.game.saveSystem.applyLoadedData(window.game, result.data);
-            if (window.game.notifications) {
-                window.game.notifications.success('Welcome back!', 'Your zoo has been loaded', '👋');
+        try {
+            // Try to load the zoo from Firebase
+            const result = await firebaseService.loadZoo();
+
+            if (result.success) {
+                window.game.saveSystem.applyLoadedData(window.game, result.data);
+                if (window.game.notifications) {
+                    window.game.notifications.success('Welcome back!', 'Your zoo has been loaded', '👋');
+                }
+            } else {
+                // No saved zoo, that's ok - they can start fresh
+                console.log('ℹ️ No saved zoo found, starting fresh');
             }
-        } else {
-            // No saved zoo, that's ok - they can start fresh
-            console.log('ℹ️ No saved zoo found, starting fresh');
+        } catch (error) {
+            console.error('Error loading zoo:', error);
+            if (window.game && window.game.notifications) {
+                window.game.notifications.warning('Load Error', 'Starting with a fresh zoo', '⚠️');
+            }
+        }
+
+        // Hide welcome/loading screen after loading
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        if (welcomeScreen) {
+            welcomeScreen.style.display = 'none';
         }
     }
 }

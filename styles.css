@@ -752,6 +752,17 @@ input[type="range"]::-moz-range-thumb {
     max-width: 450px;
 }
 
+/* Shake animation for blocked close */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+.auth-modal.shake {
+    animation: shake 0.5s;
+}
+
 .auth-tabs {
     display: flex;
     gap: 10px;
@@ -1393,4 +1404,73 @@ input:checked + .slider:before {
     .welcome-logo {
         font-size: 80px;
     }
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 80px;
+    height: 80px;
+    border: 8px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #3478f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Save Status Indicator */
+#saveStatus {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(30, 30, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#saveStatus.show {
+    opacity: 1;
+}
+
+#saveStatus.saving {
+    border-color: #ffd60a;
+}
+
+#saveStatus.saved {
+    border-color: #30d158;
+}
+
+#saveStatus.error {
+    border-color: #ff453a;
+}
+
+.save-status-icon {
+    font-size: 20px;
+}
+
+.save-status-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.save-status-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffd60a;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }

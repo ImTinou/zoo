@@ -1,2 +1,39 @@
 # Ignorer le fichier de configuration Claude
 /.claude
+
+# Firebase rules (deploy via Firebase Console or CLI)
+firestore.rules
+database.rules.json
+firebase.json
+.firebaserc
+
+# Node modules (if using Firebase CLI)
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

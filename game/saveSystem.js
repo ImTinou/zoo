@@ -4,16 +4,24 @@ class SaveSystem {
         this.autoSaveInterval = 30000; // Sauvegarde auto toutes les 30 secondes
         this.autoSaveTimer = null;
         this.firebaseService = null;
+        this.saveStatusUI = null;
     }
 
     setFirebaseService(firebaseService) {
         this.firebaseService = firebaseService;
     }
 
+    setSaveStatusUI(saveStatusUI) {
+        this.saveStatusUI = saveStatusUI;
+    }
+
     startAutoSave(game) {
         this.autoSaveTimer = setInterval(async () => {
-            await this.saveGame(game);
-            console.log('🔄 Auto-save completed');
+            // Only auto-save if authenticated
+            if (this.firebaseService && this.firebaseService.isAuthenticated()) {
+                await this.saveGame(game);
+                console.log('🔄 Auto-save completed');
+            }
         }, this.autoSaveInterval);
     }
 
@@ -27,7 +35,15 @@ class SaveSystem {
         // Require authentication
         if (!this.firebaseService || !this.firebaseService.isAuthenticated()) {
             console.warn('⚠️ Cannot save: User not authenticated');
+            if (this.saveStatusUI) {
+                this.saveStatusUI.showError('Not authenticated');
+            }
             return false;
+        }
+
+        // Show saving status
+        if (this.saveStatusUI) {
+            this.saveStatusUI.showSaving();
         }
 
         try {
@@ -91,9 +107,21 @@ class SaveSystem {
 
             // Save to Firebase only
             await this.firebaseService.saveZoo(saveData, isPublic);
+
+            // Show success status
+            if (this.saveStatusUI) {
+                this.saveStatusUI.showSaved();
+            }
+
             return true;
         } catch (error) {
             console.error('❌ Failed to save game:', error);
+
+            // Show error status
+            if (this.saveStatusUI) {
+                this.saveStatusUI.showError('Save failed');
+            }
+
             return false;
         }
     }
