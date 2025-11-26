@@ -19,10 +19,11 @@ class AuthUI {
             if (this.isInitialLoad) {
                 this.isInitialLoad = false;
                 if (!user) {
-                    // Wait a bit to ensure the page is fully loaded
+                    // Wait a bit to ensure the page is fully loaded, then show modal
                     setTimeout(() => {
+                        console.log('🔐 Opening auth modal...');
                         this.showAuthModal();
-                    }, 500);
+                    }, 1000);
                 } else {
                     // User is already logged in, load their zoo
                     this.autoLoadZoo();
@@ -60,9 +61,22 @@ class AuthUI {
                 <div id="welcomeMessage" class="welcome-message">
                     Please login or create an account to continue
                 </div>
+                <button id="welcomeLoginBtn" class="welcome-login-btn">
+                    🔐 Login / Register
+                </button>
             </div>
         `;
         document.body.appendChild(welcomeScreen);
+
+        // Add click handler for welcome button
+        setTimeout(() => {
+            const btn = document.getElementById('welcomeLoginBtn');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    this.showAuthModal();
+                });
+            }
+        }, 100);
     }
 
     showLoadingScreen(message = 'Loading...') {
