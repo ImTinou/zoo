@@ -33,7 +33,7 @@ class ResearchCenter {
 // Animaux rares à débloquer
 const RareAnimals = {
     // Animaux légendaires
-    whiteT iger: {
+    whiteTiger: {
         name: 'White Tiger',
         emoji: '🐅',
         cost: 15000,
@@ -81,7 +81,7 @@ const RareAnimals = {
         },
         description: 'Elusive and beautiful snow leopard'
     },
-    komodoD ragon: {
+    komodoDragon: {
         name: 'Komodo Dragon',
         emoji: '🦎',
         cost: 10000,

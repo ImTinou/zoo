@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoo Tycoon 3D Ultimate</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Game Canvas -->
+    <div id="gameContainer"></div>
+
+    <!-- Top Stats Bar -->
+    <div id="topBar">
+        <div class="stat-card">
+            <span class="stat-icon">💰</span>
+            <div class="stat-content">
+                <span class="stat-label">Cash</span>
+                <span id="money" class="stat-value positive">$50,000</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">👥</span>
+            <div class="stat-content">
+                <span class="stat-label">Guests</span>
+                <span id="guests" class="stat-value">0</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">⭐</span>
+            <div class="stat-content">
+                <span class="stat-label">Rating</span>
+                <span id="rating" class="stat-value">0</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-content">
+                <span class="stat-label">Date</span>
+                <span id="date" class="stat-value">Jan 2024</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Build Menu -->
+    <div id="buildMenu">
+        <button class="build-category-btn" data-category="animals">
+            🦁
+            <span class="build-category-label">Animals</span>
+        </button>
+        <button class="build-category-btn" data-category="exhibits">
+            🏗️
+            <span class="build-category-label">Exhibits</span>
+        </button>
+        <button class="build-category-btn" data-category="paths">
+            🛤️
+            <span class="build-category-label">Paths</span>
+        </button>
+        <button class="build-category-btn" data-category="facilities">
+            🏪
+            <span class="build-category-label">Facilities</span>
+        </button>
+        <button class="build-category-btn" data-category="scenery">
+            🌳
+            <span class="build-category-label">Scenery</span>
+        </button>
+        <button class="build-category-btn" data-category="staff">
+            👷
+            <span class="build-category-label">Staff</span>
+        </button>
+        <button class="build-category-btn danger" id="bulldozeBtn">
+            🗑️
+            <span class="build-category-label">Bulldoze</span>
+        </button>
+    </div>
+
+    <!-- Build Panel (appears when category selected) -->
+    <div id="buildPanel">
+        <div id="buildPanelContent"></div>
+    </div>
+
+    <!-- Speed Controls -->
+    <div id="speedControls">
+        <button class="speed-btn" id="pauseBtn">⏸️</button>
+        <button class="speed-btn active" id="speed1Btn">▶️</button>
+        <button class="speed-btn" id="speed2Btn">⏩</button>
+        <button class="speed-btn" id="speed3Btn">⏭️</button>
+    </div>
+
+    <!-- Camera Controls -->
+    <div id="cameraControls">
+        <button class="camera-btn" id="rotateLeftBtn">↶</button>
+        <button class="camera-btn" id="rotateRightBtn">↷</button>
+        <button class="camera-btn" id="zoomInBtn">+</button>
+        <button class="camera-btn" id="zoomOutBtn">−</button>
+        <button class="camera-btn" id="gridToggleBtn">⊞</button>
+    </div>
+
+    <!-- Minimap -->
+    <div id="minimap">
+        <canvas id="minimapCanvas" width="200" height="200"></canvas>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notifications"></div>
+
+    <!-- Save Status Indicator -->
+    <div id="saveStatus">
+        <div class="save-status-icon">💾</div>
+        <div class="save-status-text">Saved</div>
+    </div>
+
+    <!-- Right Info Panel -->
+    <div id="infoPanel">
+        <!-- Selection Info -->
+        <div class="info-section" id="selectionInfo">
+            <h3>🎯 Selection</h3>
+            <p style="color: #8e8ea0; font-size: 12px;">Click to select an object</p>
+        </div>
+
+        <!-- Zoo Management -->
+        <div class="info-section">
+            <h3>🎪 Park Entrance</h3>
+            <div style="margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Status:</span>
+                    <span id="entranceStatus" style="color: #ff453a; font-size: 12px; font-weight: 600;">Not Built</span>
+                </div>
+                <div id="entranceControls" style="display: none;">
+                    <label style="color: #fff; font-size: 12px; display: block; margin-bottom: 4px;">
+                        Ticket Price: $<span id="ticketPrice">20</span>
+                    </label>
+                    <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" step="5">
+                    <div style="margin-top: 10px;">
+                        <button id="upgradeEntranceBtn" class="btn" style="width: 100%; padding: 8px;">
+                            Upgrade Entrance
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 11px; color: #8e8ea0;">
+                        Level: <span id="entranceLevel">1</span> |
+                        Guests: <span id="guestsEntered">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zoo Expansion -->
+        <div class="info-section">
+            <h3>🗺️ Zoo Expansion</h3>
+            <div style="margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Current Size:</span>
+                    <span id="zooSize" style="color: #fff; font-size: 12px; font-weight: 600;">40x40</span>
+                </div>
+                <button id="expandZooBtn" class="btn success" style="width: 100%; padding: 8px;">
+                    Expand Zoo
+                </button>
+                <div style="margin-top: 8px; font-size: 11px; color: #8e8ea0;">
+                    Cost: $<span id="expansionCostValue">10,000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Report -->
+        <div class="info-section">
+            <h3>📊 Monthly Report</h3>
+            <div style="margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Income:</span>
+                    <span id="totalIncome" style="color: #30d158; font-size: 12px; font-weight: 600;">$0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: #8e8ea0; font-size: 12px;">Expenses:</span>
+                    <span id="totalExpenses" style="color: #ff453a; font-size: 12px; font-weight: 600;">$0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <span style="color: #fff; font-size: 13px; font-weight: 600;">Net:</span>
+                    <span id="netIncome" style="color: #30d158; font-size: 13px; font-weight: 700;">$0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="engine/grid.js"></script>
+    <script src="engine/camera3d.js"></script>
+    <script src="engine/renderer3d.js"></script>
+    <script src="engine/fenceBuilder.js"></script>
+    <script src="engine/pathBuilder.js"></script>
+    <script src="engine/animalModels.js"></script>
+    <script src="game/zoo.js"></script>
+    <script src="game/animals.js"></script>
+    <script src="game/terrainTypes.js"></script>
+    <script src="game/buildings.js"></script>
+    <script src="game/enrichments.js"></script>
+    <script src="game/entrance.js"></script>
+    <script src="game/visitors.js"></script>
+    <script src="game/saveSystem.js"></script>
+    <script src="game/researchCenter.js"></script>
+    <script src="ui/interface.js"></script>
+    <script src="ui/notifications.js"></script>
+    <script src="ui/minimap.js"></script>
+    <script src="ui/minigames.js"></script>
+    <script src="ui/debugMenu.js"></script>
+
+    <!-- Firebase & Social Features -->
+    <script type="module" src="firebase/config.js"></script>
+    <script type="module" src="ui/gameAuth.js"></script>
+    <script type="module" src="ui/social.js"></script>
+    <script type="module" src="ui/saveStatus.js"></script>
+    <script type="module" src="main-game.js"></script>
+</body>
+</html>

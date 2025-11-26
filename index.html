@@ -3,212 +3,439 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoo Tycoon 3D Ultimate</title>
+    <title>Zoo Tycoon 3D Ultimate - Welcome</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .hero {
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            opacity: 0.95;
+        }
+
+        .hero .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: #f5f5f7;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #8e8ea0;
+            transition: all 0.3s ease;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #3478f6;
+        }
+
+        .auth-content {
+            padding: 40px;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1d1d1f;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e5ea;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3478f6;
+            box-shadow: 0 0 0 4px rgba(52, 120, 246, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #3478f6 0%, #5e5ce6 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(52, 120, 246, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fff0f0;
+            border: 1px solid #ffcccc;
+            color: #ff3b30;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Game Canvas -->
-    <div id="gameContainer"></div>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>🦁 Zoo Tycoon 3D</h1>
+            <p class="tagline">Build. Manage. Share.</p>
+            <p class="description">
+                Créez le zoo de vos rêves en 3D et partagez-le avec des joueurs du monde entier.
+                Gérez vos animaux, développez votre parc et créez des habitats exceptionnels !
+            </p>
 
-    <!-- Top Stats Bar -->
-    <div id="topBar">
-        <div class="stat-card">
-            <span class="stat-icon">💰</span>
-            <div class="stat-content">
-                <span class="stat-label">Cash</span>
-                <span id="money" class="stat-value positive">$50,000</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">👥</span>
-            <div class="stat-content">
-                <span class="stat-label">Guests</span>
-                <span id="guests" class="stat-value">0</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">⭐</span>
-            <div class="stat-content">
-                <span class="stat-label">Rating</span>
-                <span id="rating" class="stat-value">0</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">📅</span>
-            <div class="stat-content">
-                <span class="stat-label">Date</span>
-                <span id="date" class="stat-value">Jan 2024</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Build Menu -->
-    <div id="buildMenu">
-        <button class="build-category-btn" data-category="animals">
-            🦁
-            <span class="build-category-label">Animals</span>
-        </button>
-        <button class="build-category-btn" data-category="exhibits">
-            🏗️
-            <span class="build-category-label">Exhibits</span>
-        </button>
-        <button class="build-category-btn" data-category="paths">
-            🛤️
-            <span class="build-category-label">Paths</span>
-        </button>
-        <button class="build-category-btn" data-category="facilities">
-            🏪
-            <span class="build-category-label">Facilities</span>
-        </button>
-        <button class="build-category-btn" data-category="scenery">
-            🌳
-            <span class="build-category-label">Scenery</span>
-        </button>
-        <button class="build-category-btn" data-category="staff">
-            👷
-            <span class="build-category-label">Staff</span>
-        </button>
-        <button class="build-category-btn danger" id="bulldozeBtn">
-            🗑️
-            <span class="build-category-label">Bulldoze</span>
-        </button>
-    </div>
-
-    <!-- Build Panel (appears when category selected) -->
-    <div id="buildPanel">
-        <div id="buildPanelContent"></div>
-    </div>
-
-    <!-- Speed Controls -->
-    <div id="speedControls">
-        <button class="speed-btn" id="pauseBtn">⏸️</button>
-        <button class="speed-btn active" id="speed1Btn">▶️</button>
-        <button class="speed-btn" id="speed2Btn">⏩</button>
-        <button class="speed-btn" id="speed3Btn">⏭️</button>
-    </div>
-
-    <!-- Camera Controls -->
-    <div id="cameraControls">
-        <button class="camera-btn" id="rotateLeftBtn">↶</button>
-        <button class="camera-btn" id="rotateRightBtn">↷</button>
-        <button class="camera-btn" id="zoomInBtn">+</button>
-        <button class="camera-btn" id="zoomOutBtn">−</button>
-        <button class="camera-btn" id="gridToggleBtn">⊞</button>
-    </div>
-
-    <!-- Minimap -->
-    <div id="minimap">
-        <canvas id="minimapCanvas" width="200" height="200"></canvas>
-    </div>
-
-    <!-- Notifications Container -->
-    <div id="notifications"></div>
-
-    <!-- Save Status Indicator -->
-    <div id="saveStatus">
-        <div class="save-status-icon">💾</div>
-        <div class="save-status-text">Saved</div>
-    </div>
-
-    <!-- Right Info Panel -->
-    <div id="infoPanel">
-        <!-- Selection Info -->
-        <div class="info-section" id="selectionInfo">
-            <h3>🎯 Selection</h3>
-            <p style="color: #8e8ea0; font-size: 12px;">Click to select an object</p>
-        </div>
-
-        <!-- Zoo Management -->
-        <div class="info-section">
-            <h3>🎪 Park Entrance</h3>
-            <div style="margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: #8e8ea0; font-size: 12px;">Status:</span>
-                    <span id="entranceStatus" style="color: #ff453a; font-size: 12px; font-weight: 600;">Not Built</span>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">☁️</span>
+                    <div class="feature-title">Cloud Saves</div>
+                    <div class="feature-desc">Sauvegardez automatiquement dans le cloud</div>
                 </div>
-                <div id="entranceControls" style="display: none;">
-                    <label style="color: #fff; font-size: 12px; display: block; margin-bottom: 4px;">
-                        Ticket Price: $<span id="ticketPrice">20</span>
-                    </label>
-                    <input type="range" id="ticketPriceSlider" min="5" max="100" value="20" step="5">
-                    <div style="margin-top: 10px;">
-                        <button id="upgradeEntranceBtn" class="btn" style="width: 100%; padding: 8px;">
-                            Upgrade Entrance
-                        </button>
+                <div class="feature">
+                    <span class="feature-icon">👥</span>
+                    <div class="feature-title">Amis</div>
+                    <div class="feature-desc">Ajoutez des amis et partagez vos zoos</div>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🌍</span>
+                    <div class="feature-title">Exploration</div>
+                    <div class="feature-desc">Visitez les zoos des autres joueurs</div>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎮</span>
+                    <div class="feature-title">Gameplay Riche</div>
+                    <div class="feature-desc">Plus de 30 espèces et constructions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Section -->
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Connexion</button>
+                <button class="auth-tab" data-tab="register">Inscription</button>
+            </div>
+
+            <div class="auth-content">
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form active">
+                    <div id="loginError" class="error-message"></div>
+
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="votre@email.com" required>
                     </div>
-                    <div style="margin-top: 8px; font-size: 11px; color: #8e8ea0;">
-                        Level: <span id="entranceLevel">1</span> |
-                        Guests: <span id="guestsEntered">0</span>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Mot de passe</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Zoo Expansion -->
-        <div class="info-section">
-            <h3>🗺️ Zoo Expansion</h3>
-            <div style="margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: #8e8ea0; font-size: 12px;">Current Size:</span>
-                    <span id="zooSize" style="color: #fff; font-size: 12px; font-weight: 600;">40x40</span>
-                </div>
-                <button id="expandZooBtn" class="btn success" style="width: 100%; padding: 8px;">
-                    Expand Zoo
-                </button>
-                <div style="margin-top: 8px; font-size: 11px; color: #8e8ea0;">
-                    Cost: $<span id="expansionCostValue">10,000</span>
-                </div>
-            </div>
-        </div>
+                    <button type="submit" class="btn">Se connecter</button>
+                </form>
 
-        <!-- Monthly Report -->
-        <div class="info-section">
-            <h3>📊 Monthly Report</h3>
-            <div style="margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="color: #8e8ea0; font-size: 12px;">Income:</span>
-                    <span id="totalIncome" style="color: #30d158; font-size: 12px; font-weight: 600;">$0</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="color: #8e8ea0; font-size: 12px;">Expenses:</span>
-                    <span id="totalExpenses" style="color: #ff453a; font-size: 12px; font-weight: 600;">$0</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                    <span style="color: #fff; font-size: 13px; font-weight: 600;">Net:</span>
-                    <span id="netIncome" style="color: #30d158; font-size: 13px; font-weight: 700;">$0</span>
-                </div>
+                <!-- Register Form -->
+                <form id="registerForm" class="auth-form">
+                    <div id="registerError" class="error-message"></div>
+
+                    <div class="form-group">
+                        <label for="registerName">Nom d'utilisateur</label>
+                        <input type="text" id="registerName" placeholder="ZooKeeper" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" placeholder="votre@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">Mot de passe</label>
+                        <input type="password" id="registerPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn">Créer un compte</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="engine/grid.js"></script>
-    <script src="engine/camera3d.js"></script>
-    <script src="engine/renderer3d.js"></script>
-    <script src="engine/fenceBuilder.js"></script>
-    <script src="engine/pathBuilder.js"></script>
-    <script src="engine/animalModels.js"></script>
-    <script src="game/zoo.js"></script>
-    <script src="game/animals.js"></script>
-    <script src="game/terrainTypes.js"></script>
-    <script src="game/buildings.js"></script>
-    <script src="game/enrichments.js"></script>
-    <script src="game/entrance.js"></script>
-    <script src="game/visitors.js"></script>
-    <script src="game/saveSystem.js"></script>
-    <script src="game/researchCenter.js"></script>
-    <script src="ui/interface.js"></script>
-    <script src="ui/notifications.js"></script>
-    <script src="ui/minimap.js"></script>
-    <script src="ui/minigames.js"></script>
-    <script src="ui/debugMenu.js"></script>
+    <!-- Loading Screen -->
+    <div id="loading" class="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Chargement de votre zoo...</h2>
+        </div>
+    </div>
 
-    <!-- Firebase & Social Features -->
-    <script type="module" src="firebase/config.js"></script>
-    <script type="module" src="ui/auth.js"></script>
-    <script type="module" src="ui/social.js"></script>
-    <script type="module" src="main.js"></script>
+    <!-- Firebase & Auth Scripts -->
+    <script type="module">
+        import firebaseService from './firebase/config.js';
+
+        // Tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const targetTab = e.target.dataset.tab;
+
+                // Update tabs
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+
+                // Update forms
+                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+                document.getElementById(targetTab + 'Form').classList.add('active');
+
+                // Clear errors
+                document.getElementById('loginError').classList.remove('show');
+                document.getElementById('registerError').classList.remove('show');
+            });
+        });
+
+        // Login Form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.classList.remove('show');
+
+            try {
+                document.getElementById('loading').classList.add('show');
+                const result = await firebaseService.login(email, password);
+
+                if (result.success) {
+                    // Redirect to game
+                    window.location.href = 'game.html';
+                } else {
+                    errorDiv.textContent = result.error || 'Erreur de connexion';
+                    errorDiv.classList.add('show');
+                    document.getElementById('loading').classList.remove('show');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erreur de connexion. Veuillez réessayer.';
+                errorDiv.classList.add('show');
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+
+        // Register Form
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            errorDiv.classList.remove('show');
+
+            if (password.length < 6) {
+                errorDiv.textContent = 'Le mot de passe doit contenir au moins 6 caractères';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            try {
+                document.getElementById('loading').classList.add('show');
+                const result = await firebaseService.register(email, password, name);
+
+                if (result.success) {
+                    // Redirect to game
+                    window.location.href = 'game.html';
+                } else {
+                    errorDiv.textContent = result.error || 'Erreur lors de la création du compte';
+                    errorDiv.classList.add('show');
+                    document.getElementById('loading').classList.remove('show');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erreur lors de la création du compte. Veuillez réessayer.';
+                errorDiv.classList.add('show');
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+
+        // Check if already logged in
+        firebaseService.onAuthStateChange((user) => {
+            if (user) {
+                // Already logged in, redirect to game
+                window.location.href = 'game.html';
+            }
+        });
+    </script>
 </body>
 </html>
