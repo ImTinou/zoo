@@ -1158,6 +1158,60 @@ input[type="range"]::-moz-range-thumb {
     cursor: not-allowed;
 }
 
+/* Search Sections */
+.search-section {
+    margin-bottom: 25px;
+}
+
+.search-section h4 {
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.search-divider {
+    text-align: center;
+    color: #8e8ea0;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 25px 0;
+    position: relative;
+}
+
+.search-divider::before,
+.search-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 30px);
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.search-divider::before {
+    left: 0;
+}
+
+.search-divider::after {
+    right: 0;
+}
+
+.add-friend-direct {
+    display: flex;
+    gap: 10px;
+}
+
+.add-friend-direct .search-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.add-friend-direct .search-btn {
+    flex: 0 0 140px;
+    margin-bottom: 0;
+}
+
 /* Share Modal */
 .share-modal {
     max-width: 500px;

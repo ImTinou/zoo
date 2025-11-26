@@ -95,6 +95,30 @@ class FirebaseService {
         return this.currentUser !== null;
     }
 
+    // Helper to remove undefined values from object
+    cleanObjectForFirestore(obj) {
+        if (obj === null || obj === undefined) {
+            return null;
+        }
+
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.cleanObjectForFirestore(item)).filter(item => item !== undefined);
+        }
+
+        if (typeof obj === 'object') {
+            const cleaned = {};
+            for (const key in obj) {
+                const value = this.cleanObjectForFirestore(obj[key]);
+                if (value !== undefined) {
+                    cleaned[key] = value;
+                }
+            }
+            return cleaned;
+        }
+
+        return obj;
+    }
+
     // Zoo Save Methods
     async saveZoo(zooData, isPublic = false) {
         if (!this.currentUser) {
@@ -110,7 +134,10 @@ class FirebaseService {
                 lastUpdated: new Date().toISOString()
             };
 
-            await setDoc(doc(db, 'zoos', this.currentUser.uid), zooDoc);
+            // Clean undefined values
+            const cleanedZooDoc = this.cleanObjectForFirestore(zooDoc);
+
+            await setDoc(doc(db, 'zoos', this.currentUser.uid), cleanedZooDoc);
 
             // Update user's public zoos list if public
             if (isPublic) {
@@ -267,6 +294,31 @@ class FirebaseService {
             return { success: true, friends: [] };
         } catch (error) {
             console.error('Get friends error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async findUserByIdOrUsername(searchTerm) {
+        try {
+            // Essayer d'abord par ID (UID Firebase)
+            const userById = await getDoc(doc(db, 'users', searchTerm));
+            if (userById.exists()) {
+                return { success: true, user: { id: userById.id, ...userById.data() } };
+            }
+
+            // Sinon chercher par displayName exact
+            const usersRef = collection(db, 'users');
+            const q = query(usersRef, where('displayName', '==', searchTerm));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0];
+                return { success: true, user: { id: userDoc.id, ...userDoc.data() } };
+            }
+
+            return { success: false, error: 'User not found' };
+        } catch (error) {
+            console.error('Find user error:', error);
             return { success: false, error: error.message };
         }
     }

@@ -41,9 +41,23 @@ class SocialUI {
                     <!-- Search Tab -->
                     <div id="searchTab" class="social-tab-content" style="display: none;">
                         <h3>Find Players</h3>
-                        <input type="text" id="searchUserInput" placeholder="Search by name or email..." class="search-input">
-                        <button id="searchUserBtn" class="search-btn">Search</button>
-                        <div id="searchResults" class="search-results"></div>
+
+                        <div class="search-section">
+                            <h4>Add by ID or Username</h4>
+                            <div class="add-friend-direct">
+                                <input type="text" id="addFriendDirectInput" placeholder="Enter User ID or Username" class="search-input">
+                                <button id="addFriendDirectBtn" class="search-btn">➕ Add Friend</button>
+                            </div>
+                        </div>
+
+                        <div class="search-divider">OR</div>
+
+                        <div class="search-section">
+                            <h4>Search by Name or Email</h4>
+                            <input type="text" id="searchUserInput" placeholder="Search by name or email..." class="search-input">
+                            <button id="searchUserBtn" class="search-btn">🔍 Search</button>
+                            <div id="searchResults" class="search-results"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,6 +134,17 @@ class SocialUI {
         // Show explore
         window.addEventListener('showExplore', () => {
             this.showSocialModal('explore');
+        });
+
+        // Add friend directly by ID or username
+        document.getElementById('addFriendDirectBtn').addEventListener('click', () => {
+            this.addFriendDirect();
+        });
+
+        document.getElementById('addFriendDirectInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addFriendDirect();
+            }
         });
 
         // Search users
@@ -387,6 +412,71 @@ class SocialUI {
         });
 
         return card;
+    }
+
+    async addFriendDirect() {
+        const input = document.getElementById('addFriendDirectInput');
+        const searchTerm = input.value.trim();
+        const btn = document.getElementById('addFriendDirectBtn');
+
+        if (!searchTerm) {
+            if (this.game.notifications) {
+                this.game.notifications.error('Invalid Input', 'Please enter a User ID or Username');
+            }
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Searching...';
+
+        const result = await firebaseService.findUserByIdOrUsername(searchTerm);
+
+        if (result.success) {
+            const user = result.user;
+
+            // Don't add yourself
+            if (user.id === firebaseService.currentUser?.uid) {
+                if (this.game.notifications) {
+                    this.game.notifications.error('Cannot Add', 'You cannot add yourself as a friend!');
+                }
+                btn.disabled = false;
+                btn.textContent = '➕ Add Friend';
+                return;
+            }
+
+            // Add friend
+            btn.textContent = 'Adding...';
+            const addResult = await firebaseService.addFriend(user.id);
+
+            if (addResult.success) {
+                input.value = '';
+                btn.textContent = '✓ Added!';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '➕ Add Friend';
+                }, 2000);
+
+                if (this.game.notifications) {
+                    this.game.notifications.success(
+                        'Friend Added!',
+                        `${user.displayName || user.email} is now your friend`,
+                        '👥'
+                    );
+                }
+            } else {
+                btn.disabled = false;
+                btn.textContent = '➕ Add Friend';
+                if (this.game.notifications) {
+                    this.game.notifications.error('Error', addResult.error || 'Could not add friend');
+                }
+            }
+        } else {
+            btn.disabled = false;
+            btn.textContent = '➕ Add Friend';
+            if (this.game.notifications) {
+                this.game.notifications.error('User Not Found', 'No user found with that ID or Username');
+            }
+        }
     }
 
     async searchUsers() {
