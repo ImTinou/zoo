@@ -51,56 +51,56 @@ class SaveSystem {
                 version: '1.0',
                 timestamp: Date.now(),
                 zoo: {
-                    money: game.zoo.money,
-                    date: game.zoo.date,
-                    zooRating: game.zoo.zooRating,
-                    guestCount: game.zoo.guestCount
+                    money: game.zoo.money || 0,
+                    date: game.zoo.date || { month: 1, year: 2024 },
+                    zooRating: game.zoo.zooRating || 0,
+                    guestCount: game.zoo.guestCount || 0
                 },
                 grid: {
-                    width: game.grid.width,
-                    height: game.grid.height,
+                    width: game.grid.width || 40,
+                    height: game.grid.height || 40,
                     tiles: this.serializeGrid(game.grid)
                 },
                 exhibits: game.zoo.exhibits.map(exhibit => ({
-                    x: exhibit.x,
-                    y: exhibit.y,
-                    width: exhibit.width,
-                    height: exhibit.height,
-                    id: exhibit.id,
-                    fenceType: exhibit.fenceType,
-                    terrain: exhibit.terrain,
-                    hasShelter: exhibit.hasShelter,
-                    hasWater: exhibit.hasWater
+                    x: exhibit.x || 0,
+                    y: exhibit.y || 0,
+                    width: exhibit.width || 1,
+                    height: exhibit.height || 1,
+                    id: exhibit.id || '',
+                    fenceType: exhibit.fenceType || 'wood',
+                    terrain: exhibit.terrain || 'grass',
+                    hasShelter: exhibit.hasShelter || false,
+                    hasWater: exhibit.hasWater || false
                 })),
                 animals: game.zoo.animals.map(animal => ({
-                    species: animal.species,
-                    x: animal.x,
-                    y: animal.y,
-                    name: animal.name,
-                    happiness: animal.happiness,
-                    health: animal.health,
-                    hunger: animal.hunger,
-                    age: animal.age,
-                    exhibitId: animal.exhibit ? animal.exhibit.id : null
+                    species: animal.species || 'lion',
+                    x: animal.x || 0,
+                    y: animal.y || 0,
+                    name: animal.name || 'Unknown',
+                    happiness: animal.happiness || 50,
+                    health: animal.health || 100,
+                    hunger: animal.hunger || 50,
+                    age: animal.age || 0,
+                    exhibitId: animal.exhibit ? animal.exhibit.id : ''
                 })),
                 buildings: game.zoo.buildings.map(building => ({
-                    type: building.type,
-                    x: building.x,
-                    y: building.y
+                    type: building.type || 'unknown',
+                    x: building.x || 0,
+                    y: building.y || 0
                 })),
                 entrance: game.zoo.entrance ? {
-                    x: game.zoo.entrance.x,
-                    y: game.zoo.entrance.y,
-                    ticketPrice: game.zoo.entrance.ticketPrice,
-                    upgradeLevel: game.zoo.entrance.upgradeLevel,
-                    guestsEntered: game.zoo.entrance.guestsEntered
+                    x: game.zoo.entrance.x || 0,
+                    y: game.zoo.entrance.y || 0,
+                    ticketPrice: game.zoo.entrance.ticketPrice || 20,
+                    upgradeLevel: game.zoo.entrance.upgradeLevel || 1,
+                    guestsEntered: game.zoo.entrance.guestsEntered || 0
                 } : null,
                 expansion: {
-                    currentSize: game.zoo.expansion.currentSize
+                    currentSize: game.zoo.expansion.currentSize || 40
                 },
                 satisfaction: {
-                    history: game.visitorManager.satisfactionHistory,
-                    average: game.visitorManager.averageSatisfaction
+                    history: game.visitorManager.satisfactionHistory || [],
+                    average: game.visitorManager.averageSatisfaction || 0
                 },
                 unlockedAnimals: game.zoo.unlockedAnimals || []
             };

@@ -36,7 +36,7 @@ class Game {
         this.isDragging = false;
         this.isPanning = false;
         this.animalMeshes = [];
-        this.visitorMeshes = [];
+        this.visitorMeshes = new Map(); // Map: visitor -> mesh (optimized)
         this.enrichmentMeshes = [];
         this.entranceMesh = null;
 
@@ -694,17 +694,33 @@ class Game {
     }
 
     updateVisitorMeshes() {
-        // Remove old visitor meshes
-        this.visitorMeshes.forEach(mesh => {
-            this.renderer3d.getScene().remove(mesh);
-        });
-        this.visitorMeshes = [];
+        const scene = this.renderer3d.getScene();
+        const currentVisitors = new Set(this.visitorManager.visitors);
 
-        // Create new visitor meshes
+        // Remove meshes for visitors that left
+        this.visitorMeshes.forEach((mesh, visitor) => {
+            if (!currentVisitors.has(visitor)) {
+                scene.remove(mesh);
+                this.visitorMeshes.delete(visitor);
+            }
+        });
+
+        // Add meshes for new visitors and update positions
         this.visitorManager.visitors.forEach(visitor => {
-            const visitorMesh = this.createVisitorMesh(visitor);
-            this.renderer3d.getScene().add(visitorMesh);
-            this.visitorMeshes.push(visitorMesh);
+            if (!this.visitorMeshes.has(visitor)) {
+                // New visitor - create mesh
+                const mesh = this.createVisitorMesh(visitor);
+                scene.add(mesh);
+                this.visitorMeshes.set(visitor, mesh);
+            } else {
+                // Existing visitor - update position only
+                const mesh = this.visitorMeshes.get(visitor);
+                mesh.position.set(
+                    visitor.x * 2 - this.grid.width,
+                    0,
+                    visitor.y * 2 - this.grid.height
+                );
+            }
         });
     }
 

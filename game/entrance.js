@@ -197,9 +197,9 @@ class ZooExpansion {
         }
 
         // Mettre à jour l'entrée
-        if (game.entranceMesh && zoo.entrance) {
+        if (game.entranceMesh && game.zoo.entrance) {
             scene.remove(game.entranceMesh);
-            game.entranceMesh = zoo.entrance.create3DMesh(newSize, newSize);
+            game.entranceMesh = game.zoo.entrance.create3DMesh(newSize, newSize);
             scene.add(game.entranceMesh);
         }
 
@@ -210,6 +210,37 @@ class ZooExpansion {
                 const worldX = enrichment.x * 2 - newSize;
                 const worldZ = enrichment.y * 2 - newSize;
                 mesh.position.set(worldX, mesh.position.y, worldZ);
+            }
+        });
+
+        // Recréer les clôtures des exhibits
+        game.zoo.exhibits.forEach(exhibit => {
+            // Supprimer les anciennes clôtures
+            if (exhibit.fenceMeshes) {
+                exhibit.fenceMeshes.forEach(mesh => scene.remove(mesh));
+            }
+            exhibit.fenceMeshes = [];
+
+            // Recréer les clôtures avec les nouvelles positions
+            const fenceSpec = game.fenceBuilder.fenceTypes[exhibit.fenceType];
+            if (fenceSpec) {
+                // Tracer le périmètre de l'exhibit
+                for (let x = exhibit.x; x < exhibit.x + exhibit.width; x++) {
+                    // Haut et bas
+                    const topMesh = game.fenceBuilder.createFenceMesh(x, exhibit.y, 'horizontal', fenceSpec, false);
+                    const bottomMesh = game.fenceBuilder.createFenceMesh(x, exhibit.y + exhibit.height - 1, 'horizontal', fenceSpec, false);
+                    scene.add(topMesh);
+                    scene.add(bottomMesh);
+                    exhibit.fenceMeshes.push(topMesh, bottomMesh);
+                }
+                for (let y = exhibit.y + 1; y < exhibit.y + exhibit.height - 1; y++) {
+                    // Gauche et droite
+                    const leftMesh = game.fenceBuilder.createFenceMesh(exhibit.x, y, 'vertical', fenceSpec, false);
+                    const rightMesh = game.fenceBuilder.createFenceMesh(exhibit.x + exhibit.width - 1, y, 'vertical', fenceSpec, false);
+                    scene.add(leftMesh);
+                    scene.add(rightMesh);
+                    exhibit.fenceMeshes.push(leftMesh, rightMesh);
+                }
             }
         });
     }

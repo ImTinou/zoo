@@ -109,9 +109,10 @@ class FenceBuilder {
         } else {
             // Poteaux
             const postGeom = new THREE.CylinderGeometry(0.1, 0.1, spec.height, 6);
+            const isTransparent = isPreview || (spec.transparent === true);
             const postMat = new THREE.MeshLambertMaterial({
                 color: spec.color,
-                transparent: isPreview || spec.transparent,
+                transparent: isTransparent,
                 opacity: isPreview ? 0.5 : (spec.transparent ? 0.7 : 1)
             });
 
@@ -129,7 +130,7 @@ class FenceBuilder {
             const barGeom = new THREE.BoxGeometry(1.8, 0.1, 0.1);
             const barMat = new THREE.MeshLambertMaterial({
                 color: spec.color,
-                transparent: isPreview || spec.transparent,
+                transparent: isTransparent,
                 opacity: isPreview ? 0.5 : (spec.transparent ? 0.7 : 1)
             });
 
